@@ -2,7 +2,7 @@
 
 > 开源的 AI 红队安全扫描平台：对用户自有的 AI 模型执行多维度安全评测（内容安全、隐私、合规、幻觉等），产出安全评分、风险分布与失败用例。
 
-[![CI](https://github.com/your-org/ai-red-team-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/your-org/ai-red-team-scanner/actions/workflows/ci.yml)
+[![CI](https://github.com/fengfanfan-max/ai-red-team-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/fengfanfan-max/ai-red-team-scanner/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## 功能（v1 已实现）

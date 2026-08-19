@@ -21,4 +21,4 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - ADR-0001 单租户认证；ADR-0002 SQLite 默认 + Postgres 可选；ADR-0003 进程内 asyncio 引擎；ADR-0004 无 BFF 层。
 
-[v1.0.0]: https://github.com/your-org/ai-red-team-scanner/releases/tag/v1.0.0
+[v1.0.0]: https://github.com/fengfanfan-max/ai-red-team-scanner/releases/tag/v1.0.0
