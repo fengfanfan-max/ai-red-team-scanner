@@ -28,6 +28,12 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+# One event loop for the whole session: the app's asyncpg connection pool and
+# scan-engine background tasks are module-level and must not be re-created per
+# test (asyncpg connections are bound to the loop that created them —
+# function-scoped loops crash with "another operation is in progress").
+asyncio_default_test_loop_scope = "session"
+asyncio_default_fixture_loop_scope = "session"
 testpaths = ["tests"]
 
 [tool.ruff]
