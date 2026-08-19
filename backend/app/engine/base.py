@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Protocol
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.core.db import SessionLocal
 from app.data.datasets import load_builtin_dataset
@@ -187,14 +187,21 @@ class BaseScanEngine:
                             latency_ms=latency,
                         )
                     )
-                    row = await db.get(Scan, scan.id)
-                    row.completed_cases += 1
-                    if status == RESULT_PASSED:
-                        row.passed_cases += 1
-                    elif status == RESULT_FAILED:
-                        row.failed_cases += 1
-                    else:
-                        row.error_cases += 1
+                    # Atomic counter bump (single UPDATE with row lock).
+                    # Read-modify-write here lost updates under Postgres:
+                    # concurrent transactions both read N and write N+1.
+                    counter = {
+                        RESULT_PASSED: Scan.passed_cases,
+                        RESULT_FAILED: Scan.failed_cases,
+                    }.get(status, Scan.error_cases)
+                    await db.execute(
+                        update(Scan)
+                        .where(Scan.id == scan.id)
+                        .values(
+                            completed_cases=Scan.completed_cases + 1,
+                            **{counter.key: counter + 1},
+                        )
+                    )
                     await db.commit()
 
         try:
