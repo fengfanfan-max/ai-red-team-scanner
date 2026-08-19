@@ -23,7 +23,7 @@ export function MainLayout() {
         </Link>
         <nav className="mt-6 space-y-1 text-sm">
           <Link to="/home" className="block rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800">
-            Home
+            Dashboard
           </Link>
           <Link to="/applications" className="block rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800">
             AI Applications

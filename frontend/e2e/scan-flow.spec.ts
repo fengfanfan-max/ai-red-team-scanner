@@ -54,4 +54,18 @@ test('full scan flow: register → app → scan → completed', async ({ page })
   await expect(card).toBeVisible()
   await expect(page.getByText('Completed').first()).toBeVisible({ timeout: 30_000 })
   await expect(page.getByText('Safety score:').first()).toBeVisible()
+
+  // --- result page ---
+  await page.locator('text=/scan-/').last().click()
+  await expect(page.getByText('Safety score').first()).toBeVisible()
+  await expect(page.getByText('Failure cases').first()).toBeVisible()
+  await expect(page.getByText(/Risk by category/).first()).toBeVisible()
+
+  // --- dashboard ---
+  await page.goto('/home')
+  await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+  await expect(page.getByText('Total scans')).toBeVisible()
+  await expect(page.getByText('Avg safety score')).toBeVisible()
+  await expect(page.getByText(/Recent scans/)).toBeVisible()
+  await expect(page.getByText(/Risk by category/).first()).toBeVisible()
 })

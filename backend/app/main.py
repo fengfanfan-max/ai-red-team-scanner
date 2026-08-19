@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from app.api.applications import router as applications_router
 from app.api.auth import router as auth_router
+from app.api.dashboard import router as dashboard_router
 from app.api.datasets import router as datasets_router
 from app.api.scans import router as scans_router
 from app.core.config import get_settings
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
     app.include_router(applications_router)
     app.include_router(datasets_router)
     app.include_router(scans_router)
+    app.include_router(dashboard_router)
 
     @app.get(f"{settings.api_prefix}/health")
     async def health() -> dict:

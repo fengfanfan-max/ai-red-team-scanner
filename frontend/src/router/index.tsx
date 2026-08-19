@@ -5,7 +5,9 @@ import { AuthLayout, MainLayout } from '@/layouts'
 import { AuthGuard } from './AuthGuard'
 import { GuestGuard } from './GuestGuard'
 
-const HomePage = lazy(() => import('@/pages/Home').then((m) => ({ default: m.HomePage })))
+const DashboardPage = lazy(() =>
+  import('@/pages/Dashboard').then((m) => ({ default: m.DashboardPage }))
+)
 const LoginPage = lazy(() => import('@/pages/Login').then((m) => ({ default: m.LoginPage })))
 const RegisterPage = lazy(() =>
   import('@/pages/Register').then((m) => ({ default: m.RegisterPage }))
@@ -64,7 +66,7 @@ export const router = createBrowserRouter([
           {
             element: <LazyRouteBoundary />,
             children: [
-              { path: '/home', element: <HomePage /> },
+              { path: '/home', element: <DashboardPage /> },
               { path: '/applications', element: <ApplicationsPage /> },
               { path: '/datasets', element: <DatasetsPage /> },
               { path: '/scans', element: <ScansPage /> },

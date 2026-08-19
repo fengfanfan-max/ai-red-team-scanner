@@ -240,4 +240,30 @@ class ScanResultsOut(BaseModel):
     failures: list[FailureCaseOut]
 
 
+# ============================================
+# Dashboard
+# ============================================
+
+class DashboardStats(BaseModel):
+    total_scans: int
+    completed_scans: int
+    running_scans: int
+    failed_scans: int
+    avg_safety_score: float | None
+    high_risk_scans: int
+
+
+class RiskCategoryItem(BaseModel):
+    dataset_name: str
+    avg_score: float | None
+    total: int
+    failed: int
+
+
+class DashboardOut(BaseModel):
+    stats: DashboardStats
+    recent_scans: list[ScanOut]
+    risk_by_category: list[RiskCategoryItem]
+
+
 TokenResponse.model_rebuild()
