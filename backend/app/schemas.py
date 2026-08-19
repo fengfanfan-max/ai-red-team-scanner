@@ -1,6 +1,9 @@
 from datetime import datetime
+from typing import Generic, Literal, TypeVar
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+T = TypeVar("T")
 
 
 class RegisterRequest(BaseModel):
@@ -81,6 +84,160 @@ class TestChatRequest(BaseModel):
 class TestChatResponse(BaseModel):
     reply: str
     simulated: bool = False
+
+
+# ============================================
+# Datasets
+# ============================================
+
+MAX_SUBCATEGORIES = 20
+MAX_PROMPTS_PER_SUBCATEGORY = 200
+MAX_PROMPTS_TOTAL = 2000
+
+
+class DatasetSubcategory(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    prompts: list[str] = Field(min_length=1, max_length=MAX_PROMPTS_PER_SUBCATEGORY)
+
+
+class CustomDatasetCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    description: str = Field(default="", max_length=500)
+    subcategories: list[DatasetSubcategory] = Field(
+        min_length=1, max_length=MAX_SUBCATEGORIES
+    )
+
+    @property
+    def total_prompts(self) -> int:
+        return sum(len(s.prompts) for s in self.subcategories)
+
+
+class CustomDatasetOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    description: str
+    subcategory_count: int = 0
+    prompt_count: int = 0
+    created_at: datetime
+
+
+class BuiltinDatasetOut(BaseModel):
+    name: str
+    description: str
+    subcategories: list[DatasetSubcategory]
+
+
+class DatasetsOut(BaseModel):
+    builtin: list[BuiltinDatasetOut]
+    custom: list[CustomDatasetOut]
+
+
+# ============================================
+# Pagination
+# ============================================
+
+class Pagination(BaseModel):
+    current_page: int
+    page_size: int
+    total_items: int
+    total_pages: int
+    next_page: int | None
+    prev_page: int | None
+
+
+class PaginatedList(BaseModel, Generic[T]):
+    items: list[T]
+    pagination: Pagination
+
+
+# ============================================
+# Scans
+# ============================================
+
+class DatasetRef(BaseModel):
+    source: Literal["builtin", "custom"]
+    ref: str  # builtin: dataset name; custom: str(dataset id)
+
+
+class JudgeConfig(BaseModel):
+    base_url: str = Field(min_length=4, max_length=500)
+    model: str = Field(min_length=1, max_length=200)
+    api_key: str = Field(default="", max_length=500)
+
+
+class ScanCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    application_id: int
+    algorithm: str = Field(default="Default Tests", max_length=100)
+    datasets: list[DatasetRef] = Field(min_length=1, max_length=20)
+    concurrency: int = Field(default=4, ge=1, le=32)
+    qpm: int = Field(default=60, ge=1, le=10000)
+    fail_threshold: float = Field(default=5.0, ge=0, le=10)
+    judge: JudgeConfig | None = None
+
+
+class ScanOut(BaseModel):
+    id: int
+    name: str
+    status: str
+    application_id: int
+    algorithm: str
+    datasets: list[DatasetRef]
+    concurrency: int
+    qpm: int
+    fail_threshold: float
+    total_cases: int
+    completed_cases: int
+    passed_cases: int
+    failed_cases: int
+    error_cases: int
+    safety_score: float | None
+    error_message: str | None
+    progress_pct: float
+    created_at: datetime
+    started_at: datetime | None
+    finished_at: datetime | None
+
+
+class ScanProgress(BaseModel):
+    id: int
+    status: str
+    progress_pct: float
+    completed_cases: int
+    total_cases: int
+    passed_cases: int
+    failed_cases: int
+    error_cases: int
+    remaining_time_s: float | None
+    safety_score: float | None
+    error_message: str | None
+
+
+class CategorySummary(BaseModel):
+    dataset_name: str
+    avg_score: float | None
+    passed: int
+    failed: int
+    errors: int
+    total: int
+
+
+class FailureCaseOut(BaseModel):
+    dataset_name: str
+    subcategory: str
+    prompt: str
+    answer: str | None
+    judge_score: float | None
+    judge_reason: str | None
+    judge_status: str
+
+
+class ScanResultsOut(BaseModel):
+    safety_score: float | None
+    by_category: list[CategorySummary]
+    failures: list[FailureCaseOut]
 
 
 TokenResponse.model_rebuild()

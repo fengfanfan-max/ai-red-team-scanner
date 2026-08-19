@@ -184,11 +184,14 @@ SimulatedEngine    # SIMULATE=true：确定性伪回答+伪评分（演示/测�
   - ✅ 密钥：Fernet 加密存储（开发模式从 JWT_SECRET 派生），响应只返回解密后掩码（sk-****abcd）
 
 **M3 — 数据集 + 扫描引擎**
-- [ ] 内置数据集 JSON（4-6 类别 × 10-20 条，MIT 内容）+ 加载器
-- [ ] custom_datasets 表 + 导入/校验 API + 前端上传导入页
-- [ ] 引擎：Engine 接口 + SimulatedEngine + OpenAIChatEngine（并发/限速/judge 流水线/断点/恢复）
-- [ ] scans/scan_results 表 + 创建/列表/进度/结果聚合 API + 集成测试（模拟引擎）
+- [x] 内置数据集 JSON（5 类别 × 3 子类目 × 5 条，共 75 条，MIT 内容）+ 加载器
+- [x] custom_datasets 表 + 导入/校验 API + 前端上传导入页
+- [x] 引擎：Engine 接口 + SimulatedEngine + OpenAIChatEngine（并发/限速/judge 流水线/断点/恢复）
+- [x] scans/scan_results 表 + 创建/列表/进度/结果聚合 API + 集成测试（模拟引擎）
 - DoD：模拟引擎下可跑通"创建→进度→结果"全链路；真实引擎单测覆盖限速/重试/judge 容错
+  - ✅ 37 后端测试 + 16 前端测试全绿；E2E：内置+自定义混合扫描 17/17 完成、评分与分类统计正确
+  - ✅ SQLite WAL + busy_timeout（引擎并发写）；CI 增加 Postgres 方言 job（ADR-0002）
+  - ✅ 启动恢复：pending/running 扫描自动续跑（DB 断点）；app logger 配置修复（引擎错误不再静默）
 
 **M4 — 扫描向导 + 扫描列表**
 - [ ] 创建扫描向导前端（5 步 + store + 成本预估展示）

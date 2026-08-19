@@ -28,6 +28,9 @@ export function MainLayout() {
           <Link to="/applications" className="block rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800">
             AI Applications
           </Link>
+          <Link to="/datasets" className="block rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800">
+            Datasets
+          </Link>
           <Link to="/settings" className="block rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800">
             Settings
           </Link>
