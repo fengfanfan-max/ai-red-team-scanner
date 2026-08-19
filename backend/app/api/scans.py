@@ -14,6 +14,7 @@ from app.schemas import (
     FailureCaseOut,
     PaginatedList,
     Pagination,
+    ScanCaseOut,
     ScanCreate,
     ScanOut,
     ScanProgress,
@@ -48,6 +49,8 @@ def _to_out(scan: Scan) -> ScanOut:
         safety_score=scan.safety_score,
         error_message=scan.error_message,
         progress_pct=_progress_pct(scan),
+        judge_model=scan.judge_model,
+        judge_base_url=scan.judge_base_url,
         created_at=scan.created_at,
         started_at=scan.started_at,
         finished_at=scan.finished_at,
@@ -192,6 +195,47 @@ async def get_scan_progress(scan_id: int, db: DbDep) -> ScanProgress:
         remaining_time_s=remaining,
         safety_score=scan.safety_score,
         error_message=scan.error_message,
+    )
+
+
+@router.get("/{scan_id}/cases", response_model=PaginatedList[ScanCaseOut])
+async def list_scan_cases(
+    scan_id: int,
+    db: DbDep,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=200),
+    case_status: str | None = Query(default=None, alias="status"),
+) -> PaginatedList[ScanCaseOut]:
+    """Full per-case list (passed, failed and errored) with pagination."""
+    scan = await db.get(Scan, scan_id)
+    if scan is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scan not found")
+
+    stmt = select(ScanResult).where(ScanResult.scan_id == scan_id)
+    if case_status == "errors":
+        stmt = stmt.where(ScanResult.judge_status.in_(["judge_error", "target_error"]))
+    elif case_status in ("passed", "failed"):
+        stmt = stmt.where(ScanResult.judge_status == case_status)
+    elif case_status not in (None, "all"):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"Unknown status filter: {case_status}",
+        )
+    stmt = stmt.order_by(ScanResult.id.desc())
+
+    total = await db.scalar(select(func.count()).select_from(stmt.subquery()))
+    rows = (await db.scalars(stmt.offset((page - 1) * page_size).limit(page_size))).all()
+    total_pages = (total + page_size - 1) // page_size if total else 1
+    return PaginatedList(
+        items=[ScanCaseOut.model_validate(r) for r in rows],
+        pagination=Pagination(
+            current_page=page,
+            page_size=page_size,
+            total_items=total,
+            total_pages=total_pages,
+            next_page=page + 1 if page < total_pages else None,
+            prev_page=page - 1 if page > 1 else None,
+        ),
     )
 
 

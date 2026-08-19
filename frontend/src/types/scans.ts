@@ -23,6 +23,8 @@ export interface Scan {
   safetyScore: number | null
   errorMessage: string | null
   progressPct: number
+  judgeModel: string | null
+  judgeBaseUrl: string | null
   createdAt: string
   startedAt: string | null
   finishedAt: string | null

@@ -196,6 +196,9 @@ class ScanOut(BaseModel):
     safety_score: float | None
     error_message: str | None
     progress_pct: float
+    # Judge configuration visibility (never the judge api key).
+    judge_model: str | None
+    judge_base_url: str | None
     created_at: datetime
     started_at: datetime | None
     finished_at: datetime | None
@@ -232,6 +235,23 @@ class FailureCaseOut(BaseModel):
     judge_score: float | None
     judge_reason: str | None
     judge_status: str
+
+
+class ScanCaseOut(BaseModel):
+    """One evaluated case (passed, failed or errored) — full detail page rows."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    dataset_name: str
+    subcategory: str
+    prompt: str
+    answer: str | None
+    judge_score: float | None
+    judge_reason: str | None
+    judge_status: str
+    latency_ms: int
+    created_at: datetime
 
 
 class ScanResultsOut(BaseModel):

@@ -58,8 +58,22 @@ test('full scan flow: register → app → scan → completed', async ({ page })
   // --- result page ---
   await page.locator('text=/scan-/').last().click()
   await expect(page.getByText('Safety score').first()).toBeVisible()
-  await expect(page.getByText('Failure cases').first()).toBeVisible()
+  await expect(page.getByRole('tab', { name: /Failures/ })).toBeVisible()
+
+  // overview tab
   await expect(page.getByText(/Risk by category/).first()).toBeVisible()
+
+  // all cases tab: table with latency + filter buttons
+  await page.getByRole('tab', { name: 'All cases' }).click()
+  await expect(page.getByRole('button', { name: 'passed' })).toBeVisible()
+  await expect(page.getByText(/\d+ cases · page/).first()).toBeVisible()
+  await page.getByRole('button', { name: 'failed' }).click()
+  // either failed rows (status badge) or the empty-state message
+  await expect(page.getByText(/failed|No cases match this filter/i).first()).toBeVisible()
+
+  // failures tab
+  await page.getByRole('tab', { name: /Failures/ }).click()
+  await expect(page.getByRole('tab', { name: /Failures/ })).toBeVisible()
 
   // --- dashboard ---
   await page.goto('/home')
