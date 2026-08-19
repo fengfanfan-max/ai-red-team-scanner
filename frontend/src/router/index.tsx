@@ -1,10 +1,19 @@
 import { lazy, Suspense } from 'react'
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom'
 
-import { MainLayout } from '../layouts'
+import { AuthLayout, MainLayout } from '@/layouts'
+import { AuthGuard } from './AuthGuard'
+import { GuestGuard } from './GuestGuard'
 
-const HomePage = lazy(() => import('../pages/Home').then((m) => ({ default: m.HomePage })))
-const NotFoundPage = lazy(() => import('../pages/NotFound').then((m) => ({ default: m.NotFoundPage })))
+const HomePage = lazy(() => import('@/pages/Home').then((m) => ({ default: m.HomePage })))
+const LoginPage = lazy(() => import('@/pages/Login').then((m) => ({ default: m.LoginPage })))
+const RegisterPage = lazy(() =>
+  import('@/pages/Register').then((m) => ({ default: m.RegisterPage }))
+)
+const SettingsPage = lazy(() =>
+  import('@/pages/Settings').then((m) => ({ default: m.SettingsPage }))
+)
+const NotFoundPage = lazy(() => import('@/pages/NotFound').then((m) => ({ default: m.NotFoundPage })))
 
 function LazyRouteBoundary() {
   return (
@@ -19,15 +28,33 @@ export const router = createBrowserRouter([
     path: '/',
     element: <Navigate to="/home" replace />,
   },
+  // Auth pages (centered card, no sidebar)
   {
-    element: <MainLayout />,
+    element: <GuestGuard />,
     children: [
       {
-        element: <LazyRouteBoundary />,
+        element: <AuthLayout />,
         children: [
-          { path: '/home', element: <HomePage /> },
-          { path: '/login', element: <div className="p-8">Login (M1)</div> },
-          { path: '/register', element: <div className="p-8">Register (M1)</div> },
+          { path: '/login', element: <LoginPage /> },
+          { path: '/register', element: <RegisterPage /> },
+        ],
+      },
+    ],
+  },
+  // Main app (sidebar + header, requires session)
+  {
+    element: <AuthGuard />,
+    children: [
+      {
+        element: <MainLayout />,
+        children: [
+          {
+            element: <LazyRouteBoundary />,
+            children: [
+              { path: '/home', element: <HomePage /> },
+              { path: '/settings', element: <SettingsPage /> },
+            ],
+          },
         ],
       },
     ],

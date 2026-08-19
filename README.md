@@ -27,6 +27,7 @@
 # 1. 启动后端（http://localhost:8000）
 cd backend
 uv sync
+uv run alembic upgrade head   # 初始化数据库 schema
 uv run uvicorn app.main:app --reload
 
 # 2. 启动前端（http://localhost:5173，/api 代理到后端）
@@ -35,7 +36,7 @@ npm install
 npm run dev
 ```
 
-打开 http://localhost:5173 即可看到 hello 页与后端健康检查连通。
+打开 http://localhost:5173 即可看到 hello 页与后端健康检查连通。免登录模式：后端启动前设置 `AUTH_MODE=disabled`。
 
 ### Docker Compose（生产形态）
 

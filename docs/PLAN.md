@@ -169,10 +169,11 @@ SimulatedEngine    # SIMULATE=true：确定性伪回答+伪评分（演示/测�
   - ⚠️ Docker 部分已写好但本机无 Docker，待有 Docker 环境时验证（Dockerfile 用官方 uv 多阶段模式）
 
 **M1 — 认证**
-- [ ] users 表 + JWT 签发/校验 + AUTH_MODE 开关中间件
-- [ ] register/login/logout/change-password/me API + pytest
-- [ ] 前端登录注册页、AuthGuard/GuestGuard、token 拦截器与 401 处理
+- [x] users 表 + JWT 签发/校验 + AUTH_MODE 开关中间件
+- [x] register/login/logout/change-password/me API + pytest
+- [x] 前端登录注册页、AuthGuard/GuestGuard、token 拦截器与 401 处理
 - DoD：登录闭环可用；免登录模式可用；后端 API 带鉴权测试
+  - ✅ 11 个后端测试 + 9 个前端测试全绿；真实服务器 E2E 验证全部通过（含免登录 guest 模式）
 
 **M2 — AI 应用 + 测试对话**
 - [ ] ai_applications 表 + CRUD API（加密存储、脱敏返回）+ pytest

@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
       outDir: 'dist',
     },
     test: {
-      environment: 'node',
+      environment: 'jsdom',
       include: ['src/**/*.test.{ts,tsx}'],
     },
   }

@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     # Auth (see docs/adr/0001). "disabled" = no-auth mode for local dev/demo.
     auth_mode: str = "enabled"
-    jwt_secret: str = "dev-only-secret-change-me"
+    jwt_secret: str = "dev-only-secret-change-me-0123456789abcdef01234567"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24
 
