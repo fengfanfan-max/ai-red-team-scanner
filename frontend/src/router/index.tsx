@@ -13,6 +13,9 @@ const RegisterPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import('@/pages/Settings').then((m) => ({ default: m.SettingsPage }))
 )
+const ApplicationsPage = lazy(() =>
+  import('@/pages/Applications').then((m) => ({ default: m.ApplicationsPage }))
+)
 const NotFoundPage = lazy(() => import('@/pages/NotFound').then((m) => ({ default: m.NotFoundPage })))
 
 function LazyRouteBoundary() {
@@ -52,6 +55,7 @@ export const router = createBrowserRouter([
             element: <LazyRouteBoundary />,
             children: [
               { path: '/home', element: <HomePage /> },
+              { path: '/applications', element: <ApplicationsPage /> },
               { path: '/settings', element: <SettingsPage /> },
             ],
           },

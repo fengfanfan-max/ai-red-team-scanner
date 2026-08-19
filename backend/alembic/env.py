@@ -6,12 +6,12 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-from app.core.config import get_settings
-from app.core.db import Base
 
 # Import all models here so they register on Base.metadata (tables land in
 # migrations as models are added in later milestones).
-# from app import models  # noqa: F401  (uncomment when the first model lands)
+from app import models  # noqa: F401
+from app.core.config import get_settings
+from app.core.db import Base
 
 config = context.config
 if config.config_file_name is not None:

@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.applications import router as applications_router
 from app.api.auth import router as auth_router
 from app.core.config import get_settings
 
@@ -22,6 +23,7 @@ def create_app() -> FastAPI:
     app.state.settings = settings
 
     app.include_router(auth_router)
+    app.include_router(applications_router)
 
     @app.get(f"{settings.api_prefix}/health")
     async def health() -> dict:

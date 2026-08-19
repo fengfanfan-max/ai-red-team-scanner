@@ -176,10 +176,12 @@ SimulatedEngine    # SIMULATE=true：确定性伪回答+伪评分（演示/测�
   - ✅ 11 个后端测试 + 9 个前端测试全绿；真实服务器 E2E 验证全部通过（含免登录 guest 模式）
 
 **M2 — AI 应用 + 测试对话**
-- [ ] ai_applications 表 + CRUD API（加密存储、脱敏返回）+ pytest
-- [ ] 前端应用列表/新建/编辑/删除（表单 zod 校验）
-- [ ] test-chat API（OpenAI 兼容调用，超时与错误处理）+ 前端试聊弹窗
+- [x] ai_applications 表 + CRUD API（加密存储、脱敏返回）+ pytest
+- [x] 前端应用列表/新建/编辑/删除（表单 zod 校验）
+- [x] test-chat API（OpenAI 兼容调用，超时与错误处理）+ 前端试聊弹窗
 - DoD：真实 key 可连通测试对话；无 key 时模拟模式可演示
+  - ✅ 21 后端测试 + 12 前端测试全绿；E2E：CRUD + 模拟试聊 + 更新保留密钥 + 删除 204
+  - ✅ 密钥：Fernet 加密存储（开发模式从 JWT_SECRET 派生），响应只返回解密后掩码（sk-****abcd）
 
 **M3 — 数据集 + 扫描引擎**
 - [ ] 内置数据集 JSON（4-6 类别 × 10-20 条，MIT 内容）+ 加载器
