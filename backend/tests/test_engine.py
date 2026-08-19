@@ -6,6 +6,25 @@ from app.engine.base import Case
 from app.engine.judge import JudgeParseError, build_judge_messages, parse_judge_response
 from app.engine.rate_limit import TokenBucket
 from app.engine.simulated_engine import SimulatedEngine, _deterministic_score
+from app.services.llm import build_auth_headers, build_chat_url
+
+
+def test_build_chat_url_normalizes() -> None:
+    assert (
+        build_chat_url("https://api.openai.com/v1")
+        == "https://api.openai.com/v1/chat/completions"
+    )
+    assert (
+        build_chat_url("http://localhost:11434/v1/")
+        == "http://localhost:11434/v1/chat/completions"
+    )
+
+
+def test_auth_headers_omit_key_when_empty() -> None:
+    """Local endpoints (Ollama/vLLM) need no key: no Authorization header."""
+    assert "Authorization" not in build_auth_headers("")
+    assert "Authorization" not in build_auth_headers(None)
+    assert build_auth_headers("sk-123")["Authorization"] == "Bearer sk-123"
 
 
 @pytest.mark.asyncio

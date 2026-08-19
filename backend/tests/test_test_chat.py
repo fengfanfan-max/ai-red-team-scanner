@@ -36,19 +36,31 @@ async def _create_app(client, headers, **overrides):
 
 
 @pytest.mark.asyncio
-async def test_test_chat_missing_key_rejected(auth_client, monkeypatch) -> None:
-    """Without a stored key, test-chat must refuse before any LLM call."""
+async def test_test_chat_without_key_calls_with_empty_key(auth_client, monkeypatch) -> None:
+    """Local endpoints (Ollama) need no key: the request must still be sent,
+    just without an Authorization header."""
     monkeypatch.setitem(
         app.dependency_overrides, get_settings, lambda: Settings(simulate_scan=False)
     )
+    captured: dict = {}
+
+    async def _fake_chat(base_url, api_key, model, messages, **kwargs):
+        captured["base_url"] = base_url
+        captured["api_key"] = api_key
+        return "hello from the model"
+
+    monkeypatch.setattr("app.api.applications.chat_completion", _fake_chat)
+
     client, headers = auth_client
     app_id = await _create_app(client, headers, api_key="")
 
     resp = await client.post(
         f"/api/applications/{app_id}/test-chat", json={"message": "hi"}, headers=headers
     )
-    assert resp.status_code == 400
-    assert "no API key" in resp.json()["detail"]
+    assert resp.status_code == 200
+    assert resp.json()["reply"] == "hello from the model"
+    assert captured["api_key"] == ""
+    assert captured["base_url"] == "https://api.openai.com/v1"
 
 
 @pytest.mark.asyncio

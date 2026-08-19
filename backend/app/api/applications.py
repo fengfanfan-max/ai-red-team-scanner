@@ -116,11 +116,8 @@ async def test_chat(
         )
 
     api_key = decrypt_api_key(app.api_key_cipher, settings) if app.api_key_cipher else ""
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Application has no API key — add one before testing",
-        )
+    # Key is optional: local endpoints (Ollama/vLLM) don't require one; cloud
+    # providers will 401 and surface as a clear 502 error below.
 
     try:
         reply = await chat_completion(

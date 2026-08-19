@@ -23,6 +23,18 @@ def build_chat_url(base_url: str) -> str:
     return f"{base_url.rstrip('/')}/chat/completions"
 
 
+def build_auth_headers(api_key: str | None) -> dict[str, str]:
+    """Content headers; Authorization is OMITTED when no key is configured.
+
+    Local endpoints (Ollama/vLLM) do not require a key, while cloud providers
+    respond 401 — the caller sees a clear error either way.
+    """
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    return headers
+
+
 async def chat_completion(
     base_url: str,
     api_key: str,
@@ -36,10 +48,7 @@ async def chat_completion(
         "model": model,
         "messages": messages,
     }
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
+    headers = build_auth_headers(api_key)
     try:
         async with httpx.AsyncClient(timeout=request_timeout) as client:
             resp = await client.post(url, json=payload, headers=headers)

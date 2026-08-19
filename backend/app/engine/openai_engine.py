@@ -55,8 +55,6 @@ class OpenAIChatEngine(BaseScanEngine):
 
     async def ask_target(self, case: Case) -> str:
         assert self._target is not None, "prepare() must run before ask_target()"
-        if not self._target.api_key:
-            raise LLMError("Target application has no API key configured")
 
         messages = [{"role": "user", "content": case.prompt}]
         last_error: Exception | None = None
@@ -64,7 +62,7 @@ class OpenAIChatEngine(BaseScanEngine):
             try:
                 return await chat_completion(
                     self._target.base_url,
-                    self._target.api_key,
+                    self._target.api_key or "",
                     self._target.model,
                     messages,
                 )
@@ -75,8 +73,6 @@ class OpenAIChatEngine(BaseScanEngine):
 
     async def ask_judge(self, case: Case, answer: str) -> JudgeVerdict:
         assert self._judge is not None, "prepare() must run before ask_judge()"
-        if not self._judge.api_key:
-            raise LLMError("Judge endpoint has no API key configured")
 
         messages = build_judge_messages(case.prompt, answer)
         last_error: Exception | None = None
@@ -84,7 +80,7 @@ class OpenAIChatEngine(BaseScanEngine):
             try:
                 raw = await chat_completion(
                     self._judge.base_url,
-                    self._judge.api_key,
+                    self._judge.api_key or "",
                     self._judge.model,
                     messages,
                 )
