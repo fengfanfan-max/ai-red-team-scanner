@@ -20,6 +20,7 @@ COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-dev --no-install-project
 
 COPY backend/app ./app
+COPY backend/data ./data
 COPY backend/alembic ./alembic
 COPY backend/alembic.ini ./
 COPY --from=frontend-build /build/frontend/dist ./static
