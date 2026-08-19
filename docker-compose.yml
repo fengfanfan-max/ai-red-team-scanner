@@ -1,0 +1,54 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - '8000:8000'
+    environment:
+      # SQLite mode by default (zero dependencies). Override to Postgres with:
+      #   docker compose --profile postgres up --build
+      DATABASE_URL: ${DATABASE_URL:-sqlite+aiosqlite:////app/data/data.db}
+      AUTH_MODE: ${AUTH_MODE:-enabled}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      SIMULATE_SCAN: ${SIMULATE_SCAN:-false}
+    volumes:
+      - app-data:/app/data
+    profiles: ['sqlite']
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-scanner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scanner}
+      POSTGRES_DB: ${POSTGRES_DB:-scanner}
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-scanner}']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    profiles: ['postgres']
+
+  backend-pg:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - '8000:8000'
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-scanner}:${POSTGRES_PASSWORD:-scanner}@db:5432/${POSTGRES_DB:-scanner}
+      AUTH_MODE: ${AUTH_MODE:-enabled}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
+      SIMULATE_SCAN: ${SIMULATE_SCAN:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: ['postgres']
+
+volumes:
+  app-data:
+  pg-data:
