@@ -1,6 +1,13 @@
 import { useState } from 'react'
 
 import { testChat } from '@/api/applications'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import type { AIApplication } from '@/types/applications'
 
 interface Props {
@@ -32,26 +39,23 @@ export function TestChatDialog({ application, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div
-        className="flex h-[480px] w-full max-w-lg flex-col rounded-xl border border-border bg-surface shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="border-b border-border px-5 py-3">
-          <h2 className="text-base font-semibold">
+    <Dialog open onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="flex h-[480px] max-w-lg flex-col gap-0 p-0">
+        <DialogHeader className="border-b border-border px-5 py-3 text-left">
+          <DialogTitle>
             Test chat — {application.name} ({application.modelName})
-          </h2>
-          <p className="text-xs text-neutral-500">{application.baseUrl}</p>
-        </div>
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground">{application.baseUrl}</p>
+        </DialogHeader>
 
         <div className="flex-1 space-y-3 overflow-y-auto p-5 text-sm">
           {message && (
-            <div className="ml-auto w-fit max-w-[85%] rounded-lg bg-primary px-3 py-2 text-white">
+            <div className="ml-auto w-fit max-w-[85%] rounded-lg bg-primary px-3 py-2 text-primary-foreground">
               {message}
             </div>
           )}
           {reply !== null && (
-            <div className="mr-auto w-fit max-w-[85%] whitespace-pre-wrap rounded-lg border border-border bg-neutral-50 px-3 py-2 dark:bg-neutral-800">
+            <div className="mr-auto w-fit max-w-[85%] whitespace-pre-wrap rounded-lg border border-border bg-muted px-3 py-2">
               {reply}
               {simulated && (
                 <span className="mt-1 block text-xs text-amber-600">(simulated reply)</span>
@@ -61,7 +65,7 @@ export function TestChatDialog({ application, onClose }: Props) {
           {error && <p className="text-sm text-red-600">{error}</p>}
         </div>
 
-        <div className="flex gap-2 border-t border-border p-4">
+        <DialogFooter className="gap-2 border-t border-border p-4 sm:flex-row">
           <input
             value={message}
             onChange={(e) => setMessage(e.target.value)}
@@ -72,20 +76,20 @@ export function TestChatDialog({ application, onClose }: Props) {
               }
             }}
             placeholder="Say something to the model…"
-            className="flex-1 rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-primary"
+            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
           />
           <button
             onClick={() => void handleSend()}
             disabled={sending || !message.trim()}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
           >
             {sending ? 'Sending…' : 'Send'}
           </button>
-          <button onClick={onClose} className="rounded-md border border-border px-3 py-2 text-sm">
+          <button onClick={onClose} className="rounded-md border border-input px-3 py-2 text-sm">
             Close
           </button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { getScan } from '@/api/scans'
 import { getScanResults } from '@/api/results'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import type { FailureCase, ScanResults } from '@/types/results'
 import type { ScanStatus } from '@/types/scans'
 import { SCORE_BAR, SCORE_TEXT, scoreTone } from '@/utils/score'
@@ -191,57 +192,51 @@ function ScoreOverview({ results }: { results: ScanResults }) {
 
 function FailureDrawer({ failure, onClose }: { failure: FailureCase; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 bg-black/40" onClick={onClose}>
-      <div
-        className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col overflow-y-auto bg-surface p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold">Failure detail</h3>
-          <button onClick={onClose} className="text-sm text-neutral-400 hover:text-neutral-700">
-            Close
-          </button>
-        </div>
+    <Sheet open onOpenChange={(next) => !next && onClose()}>
+      <SheetContent side="right" className="w-full max-w-md overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle>Failure detail</SheetTitle>
+        </SheetHeader>
 
         <dl className="mt-4 space-y-4 text-sm">
           <div>
-            <dt className="text-xs text-neutral-500">Dataset / subcategory</dt>
+            <dt className="text-xs text-muted-foreground">Dataset / subcategory</dt>
             <dd className="mt-1">
               {failure.datasetName} · {failure.subcategory}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-neutral-500">Prompt</dt>
-            <dd className="mt-1 whitespace-pre-wrap rounded-lg border border-border bg-neutral-50 p-3 dark:bg-neutral-800">
+            <dt className="text-xs text-muted-foreground">Prompt</dt>
+            <dd className="mt-1 whitespace-pre-wrap rounded-lg border border-border bg-muted p-3">
               {failure.prompt}
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-neutral-500">Model answer</dt>
-            <dd className="mt-1 whitespace-pre-wrap rounded-lg border border-border bg-neutral-50 p-3 dark:bg-neutral-800">
-              {failure.answer ?? <span className="text-neutral-400">(no answer — target error)</span>}
+            <dt className="text-xs text-muted-foreground">Model answer</dt>
+            <dd className="mt-1 whitespace-pre-wrap rounded-lg border border-border bg-muted p-3">
+              {failure.answer ?? <span className="text-muted-foreground">(no answer — target error)</span>}
             </dd>
           </div>
           <div className="flex gap-6">
             <div>
-              <dt className="text-xs text-neutral-500">Judge score</dt>
+              <dt className="text-xs text-muted-foreground">Judge score</dt>
               <dd className="mt-1 font-semibold">
                 {failure.judgeScore === null ? '—' : `${failure.judgeScore}/10`}
               </dd>
             </div>
             <div>
-              <dt className="text-xs text-neutral-500">Status</dt>
+              <dt className="text-xs text-muted-foreground">Status</dt>
               <dd className="mt-1">{failure.judgeStatus}</dd>
             </div>
           </div>
           {failure.judgeReason && (
             <div>
-              <dt className="text-xs text-neutral-500">Judge reason</dt>
+              <dt className="text-xs text-muted-foreground">Judge reason</dt>
               <dd className="mt-1">{failure.judgeReason}</dd>
             </div>
           )}
         </dl>
-      </div>
-    </div>
+      </SheetContent>
+    </Sheet>
   )
 }

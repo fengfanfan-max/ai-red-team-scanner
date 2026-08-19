@@ -3,6 +3,14 @@ import { useEffect, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   applicationSchema,
   type ApplicationFormValues,
 } from '../applicationSchema'
@@ -29,7 +37,7 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-1 block text-sm text-neutral-600 dark:text-neutral-300">
+      <label htmlFor={htmlFor} className="mb-1 block text-sm text-muted-foreground">
         {label}
       </label>
       {children}
@@ -39,7 +47,7 @@ function Field({
 }
 
 const inputClass =
-  'w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-primary'
+  'w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring'
 
 export function ApplicationFormDialog({ open, application, onClose, onSubmit }: Props) {
   const {
@@ -69,19 +77,18 @@ export function ApplicationFormDialog({ open, application, onClose, onSubmit }: 
     }
   }, [open, application, reset])
 
-  if (!open) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-base font-semibold">
-          {application ? `Edit ${application.name}` : 'New AI application'}
-        </h2>
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{application ? `Edit ${application.name}` : 'New AI application'}</DialogTitle>
+          <DialogDescription>
+            Connect an OpenAI-compatible model endpoint. API keys are encrypted and never shown
+            again.
+          </DialogDescription>
+        </DialogHeader>
         <form
-          className="mt-4 space-y-4"
+          className="space-y-4"
           onSubmit={handleSubmit(async (values) => {
             await onSubmit(values)
             reset()
@@ -119,24 +126,24 @@ export function ApplicationFormDialog({ open, application, onClose, onSubmit }: 
               placeholder="sk-…"
             />
           </Field>
-          <div className="flex justify-end gap-2 pt-2">
+          <DialogFooter>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md border border-border px-4 py-2 text-sm"
+              className="rounded-md border border-input px-4 py-2 text-sm"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
             >
               {isSubmitting ? 'Saving…' : application ? 'Save changes' : 'Create'}
             </button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

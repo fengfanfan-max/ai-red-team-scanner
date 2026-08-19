@@ -2,6 +2,7 @@ import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 
 import { createCustomDataset, deleteCustomDataset, listDatasets } from '@/api/datasets'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import type { CustomDatasetPayload } from '@/types/datasets'
 import { customDatasetSchema, type CustomDatasetFormValues } from './customDatasetSchema'
 
@@ -168,37 +169,14 @@ export function DatasetsPage() {
         </>
       )}
 
-      {confirmDelete && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setConfirmDelete(null)}
-        >
-          <div
-            className="w-full max-w-sm rounded-xl border border-border bg-surface p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-base font-semibold">Delete {confirmDelete.name}?</h3>
-            <p className="mt-2 text-sm text-neutral-500">
-              Scans that already used this dataset keep their results.
-            </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="rounded-md border border-border px-4 py-2 text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteMutation.mutate(confirmDelete.id)}
-                disabled={deleteMutation.isPending}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-              >
-                {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        title={confirmDelete ? `Delete ${confirmDelete.name}?` : ''}
+        description="Scans that already used this dataset keep their results."
+        pending={deleteMutation.isPending}
+        onConfirm={() => confirmDelete && deleteMutation.mutate(confirmDelete.id)}
+        onClose={() => setConfirmDelete(null)}
+      />
     </div>
   )
 }

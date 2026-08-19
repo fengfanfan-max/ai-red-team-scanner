@@ -7,6 +7,7 @@ import {
   listApplications,
   updateApplication,
 } from '@/api/applications'
+import { ConfirmDialog } from '@/components/ConfirmDialog'
 import type { ApplicationPayload } from '@/types/applications'
 import type { AIApplication } from '@/types/applications'
 import type { ApplicationFormValues } from './applicationSchema'
@@ -150,37 +151,14 @@ export function ApplicationsPage() {
 
       {chatting && <TestChatDialog application={chatting} onClose={() => setChatting(null)} />}
 
-      {confirmDelete && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setConfirmDelete(null)}
-        >
-          <div
-            className="w-full max-w-sm rounded-xl border border-border bg-surface p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-base font-semibold">Delete {confirmDelete.name}?</h3>
-            <p className="mt-2 text-sm text-neutral-500">
-              This removes the application configuration. Past scan results are not deleted.
-            </p>
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                onClick={() => setConfirmDelete(null)}
-                className="rounded-md border border-border px-4 py-2 text-sm"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteMutation.mutate(confirmDelete.id)}
-                disabled={deleteMutation.isPending}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-              >
-                {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        title={confirmDelete ? `Delete ${confirmDelete.name}?` : ''}
+        description="This removes the application configuration. Past scan results are not deleted."
+        pending={deleteMutation.isPending}
+        onConfirm={() => confirmDelete && deleteMutation.mutate(confirmDelete.id)}
+        onClose={() => setConfirmDelete(null)}
+      />
     </div>
   )
 }
