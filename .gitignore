@@ -32,3 +32,6 @@ data/
 
 # Build
 *.log
+test-results/
+playwright-report/
+.pw-browsers/

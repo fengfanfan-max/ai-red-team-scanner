@@ -19,6 +19,13 @@ const ApplicationsPage = lazy(() =>
 const DatasetsPage = lazy(() =>
   import('@/pages/Datasets').then((m) => ({ default: m.DatasetsPage }))
 )
+const ScansPage = lazy(() => import('@/pages/Scans').then((m) => ({ default: m.ScansPage })))
+const CreateScanPage = lazy(() =>
+  import('@/pages/CreateScan').then((m) => ({ default: m.CreateScanPage }))
+)
+const ScanResultPage = lazy(() =>
+  import('@/pages/ScanResult').then((m) => ({ default: m.ScanResultPage }))
+)
 const NotFoundPage = lazy(() => import('@/pages/NotFound').then((m) => ({ default: m.NotFoundPage })))
 
 function LazyRouteBoundary() {
@@ -60,6 +67,9 @@ export const router = createBrowserRouter([
               { path: '/home', element: <HomePage /> },
               { path: '/applications', element: <ApplicationsPage /> },
               { path: '/datasets', element: <DatasetsPage /> },
+              { path: '/scans', element: <ScansPage /> },
+              { path: '/scans/new', element: <CreateScanPage /> },
+              { path: '/scans/:scanId', element: <ScanResultPage /> },
               { path: '/settings', element: <SettingsPage /> },
             ],
           },

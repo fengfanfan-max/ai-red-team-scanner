@@ -5,6 +5,10 @@ export function listApplications(): Promise<AIApplication[]> {
   return api<AIApplication[]>('/applications')
 }
 
+export function getApplication(id: number): Promise<AIApplication> {
+  return api<AIApplication>(`/applications/${id}`)
+}
+
 export function createApplication(payload: ApplicationPayload): Promise<AIApplication> {
   return api<AIApplication>('/applications', { method: 'POST', body: payload })
 }
