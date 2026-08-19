@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { getScan } from '@/api/scans'
 import { getScanResults, listScanCases } from '@/api/results'
+import { CaseStatusBadge, ScanStatusBadge, ToneProgress } from '@/components/ScanStatusBadge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Table,
@@ -15,22 +16,8 @@ import {
 } from '@/components/ui/table'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import type { FailureCase, ScanCase, ScanResults } from '@/types/results'
-import type { Scan, ScanStatus } from '@/types/scans'
-import { SCORE_BAR, SCORE_TEXT, scoreTone } from '@/utils/score'
-
-const STATUS_LABEL: Record<ScanStatus, string> = {
-  pending: 'Pending',
-  running: 'Running',
-  failed: 'Failed',
-  completed: 'Completed',
-}
-
-const STATUS_CLASS: Record<ScanStatus, string> = {
-  pending: 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300',
-  running: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200',
-  failed: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200',
-  completed: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200',
-}
+import type { Scan } from '@/types/scans'
+import { SCORE_TEXT, scoreTone } from '@/utils/score'
 
 interface CaseDetail {
   datasetName: string
@@ -155,9 +142,7 @@ function ScanHeader({ scan }: { scan: Scan }) {
             </div>
           </dl>
         </div>
-        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_CLASS[scan.status]}`}>
-          {STATUS_LABEL[scan.status]}
-        </span>
+        <ScanStatusBadge status={scan.status} />
       </div>
     </div>
   )
@@ -176,11 +161,8 @@ function ScoreOverview({ results }: { results: ScanResults }) {
         ) : (
           <>
             <p className={`mt-1 text-4xl font-bold ${SCORE_TEXT[scoreTone(score)]}`}>{score}</p>
-            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
-              <div
-                className={`h-full rounded-full ${SCORE_BAR[scoreTone(score)]}`}
-                style={{ width: `${score}%` }}
-              />
+            <div className="mt-3">
+              <ToneProgress value={score} tone={scoreTone(score)} />
             </div>
           </>
         )}
@@ -197,11 +179,8 @@ function ScoreOverview({ results }: { results: ScanResults }) {
             return (
               <div key={cat.datasetName} className="flex items-center gap-3 text-xs">
                 <span className="w-40 shrink-0 truncate font-medium">{cat.datasetName}</span>
-                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                  <div
-                    className={`h-full rounded-full ${SCORE_BAR[tone]}`}
-                    style={{ width: `${(avg ?? 0) * 10}%` }}
-                  />
+                <div className="flex-1">
+                  <ToneProgress value={(avg ?? 0) * 10} tone={tone} />
                 </div>
                 <span className="w-32 shrink-0 text-right text-muted-foreground">
                   avg {avg ?? '—'} · {cat.failed}/{cat.total} failed
@@ -219,13 +198,6 @@ function ScoreOverview({ results }: { results: ScanResults }) {
 
 const STATUS_FILTERS = ['all', 'passed', 'failed', 'errors'] as const
 type StatusFilter = (typeof STATUS_FILTERS)[number]
-
-const CASE_STATUS_LABEL: Record<string, string> = {
-  passed: 'passed',
-  failed: 'failed',
-  judge_error: 'judge error',
-  target_error: 'target error',
-}
 
 function CasesTable({
   scanId,
@@ -404,16 +376,6 @@ function FailuresTable({
       )}
     </div>
   )
-}
-
-function CaseStatusBadge({ status }: { status: string }) {
-  const cls =
-    status === 'passed'
-      ? 'text-green-600 dark:text-green-400'
-      : status === 'failed'
-        ? 'text-red-600 dark:text-red-400'
-        : 'text-amber-600 dark:text-amber-400'
-  return <span className={cls}>{CASE_STATUS_LABEL[status] ?? status}</span>
 }
 
 /* ---------------- case detail drawer ---------------- */

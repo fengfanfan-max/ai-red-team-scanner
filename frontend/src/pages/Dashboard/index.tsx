@@ -2,8 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 
 import { getDashboard } from '@/api/dashboard'
+import { ToneProgress } from '@/components/ScanStatusBadge'
 import type { ScanStatus } from '@/types/scans'
-import { SCORE_BAR, SCORE_TEXT, scoreTone } from '@/utils/score'
+import { SCORE_TEXT, scoreTone } from '@/utils/score'
 
 const STATUS_LABEL: Record<ScanStatus, string> = {
   pending: 'Pending',
@@ -75,11 +76,8 @@ export function DashboardPage() {
                         avg {score ?? '—'}/10 · {cat.failed}/{cat.total} failed
                       </span>
                     </div>
-                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-neutral-100 dark:bg-neutral-800">
-                      <div
-                        className={`h-full rounded-full ${SCORE_BAR[tone]}`}
-                        style={{ width: `${pct}%` }}
-                      />
+                    <div className="mt-1">
+                      <ToneProgress value={pct} tone={tone} />
                     </div>
                   </div>
                 )
