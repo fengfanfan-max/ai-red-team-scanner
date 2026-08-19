@@ -20,6 +20,8 @@ coverage/
 # Data (local sqlite)
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
 data/
 
 # Editor / OS
