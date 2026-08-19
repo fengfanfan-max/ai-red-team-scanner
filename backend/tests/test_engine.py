@@ -6,7 +6,12 @@ from app.engine.base import Case
 from app.engine.judge import JudgeParseError, build_judge_messages, parse_judge_response
 from app.engine.rate_limit import TokenBucket
 from app.engine.simulated_engine import SimulatedEngine, _deterministic_score
-from app.services.llm import build_auth_headers, build_chat_url
+from app.services.llm import (
+    LLMError,
+    build_auth_headers,
+    build_chat_url,
+    retry_llm_call,
+)
 
 
 def test_build_chat_url_normalizes() -> None:
@@ -25,6 +30,59 @@ def test_auth_headers_omit_key_when_empty() -> None:
     assert "Authorization" not in build_auth_headers("")
     assert "Authorization" not in build_auth_headers(None)
     assert build_auth_headers("sk-123")["Authorization"] == "Bearer sk-123"
+
+
+def test_llm_error_retryability() -> None:
+    # transport-level (None) and transient HTTP codes retry…
+    assert LLMError("timeout").retryable is True
+    assert LLMError("429", status_code=429).retryable is True
+    assert LLMError("503", status_code=503).retryable is True
+    # …deterministic rejections do not
+    assert LLMError("400", status_code=400).retryable is False
+    assert LLMError("401", status_code=401).retryable is False
+    assert LLMError("403", status_code=403).retryable is False
+    assert LLMError("403", status_code=403).provider_blocked is True
+
+
+@pytest.mark.asyncio
+async def test_retry_llm_call_retries_transient_only() -> None:
+    calls = {"n": 0}
+
+    async def _flaky():
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise LLMError("burst limit", status_code=429)
+        return "ok"
+
+    result = await retry_llm_call(_flaky, attempts=3, what="test")
+    assert result == "ok"
+    assert calls["n"] == 3
+
+
+@pytest.mark.asyncio
+async def test_retry_llm_call_does_not_retry_blocked() -> None:
+    calls = {"n": 0}
+
+    async def _blocked():
+        calls["n"] += 1
+        raise LLMError("content policy violation", status_code=403)
+
+    with pytest.raises(LLMError):
+        await retry_llm_call(_blocked, attempts=3, what="test")
+    assert calls["n"] == 1  # no retry for deterministic rejections
+
+
+@pytest.mark.asyncio
+async def test_retry_llm_call_gives_up_after_attempts() -> None:
+    calls = {"n": 0}
+
+    async def _always_429():
+        calls["n"] += 1
+        raise LLMError("rate limited", status_code=429)
+
+    with pytest.raises(LLMError):
+        await retry_llm_call(_always_429, attempts=2, what="test")
+    assert calls["n"] == 2
 
 
 @pytest.mark.asyncio

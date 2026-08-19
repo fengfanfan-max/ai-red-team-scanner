@@ -4,7 +4,6 @@ Engine instances are created PER SCAN by the manager, so per-scan config
 resolved in `prepare()` can live on `self` without cross-scan races.
 """
 
-import asyncio
 from dataclasses import dataclass
 
 from app.core.config import Settings
@@ -12,10 +11,10 @@ from app.core.crypto import decrypt_api_key
 from app.engine.base import BaseScanEngine, Case
 from app.engine.judge import JudgeVerdict, build_judge_messages, parse_judge_response
 from app.models import AIApplication, Scan
-from app.services.llm import LLMError, chat_completion
+from app.services.llm import chat_completion, retry_llm_call
 
-TARGET_RETRIES = 1
-JUDGE_RETRIES = 1
+TARGET_ATTEMPTS = 3
+JUDGE_ATTEMPTS = 3
 
 
 @dataclass(frozen=True)
@@ -56,36 +55,31 @@ class OpenAIChatEngine(BaseScanEngine):
     async def ask_target(self, case: Case) -> str:
         assert self._target is not None, "prepare() must run before ask_target()"
 
-        messages = [{"role": "user", "content": case.prompt}]
-        last_error: Exception | None = None
-        for attempt in range(TARGET_RETRIES + 1):
-            try:
-                return await chat_completion(
-                    self._target.base_url,
-                    self._target.api_key or "",
-                    self._target.model,
-                    messages,
-                )
-            except LLMError as exc:
-                last_error = exc
-                await asyncio.sleep(0.5 * (attempt + 1))
-        raise last_error  # type: ignore[misc]
+        return await retry_llm_call(
+            lambda: chat_completion(
+                self._target.base_url,
+                self._target.api_key or "",
+                self._target.model,
+                [{"role": "user", "content": case.prompt}],
+            ),
+            attempts=TARGET_ATTEMPTS,
+            what=f"target call (scan case {case.prompt_hash[:8]})",
+        )
 
     async def ask_judge(self, case: Case, answer: str) -> JudgeVerdict:
         assert self._judge is not None, "prepare() must run before ask_judge()"
 
-        messages = build_judge_messages(case.prompt, answer)
-        last_error: Exception | None = None
-        for attempt in range(JUDGE_RETRIES + 1):
-            try:
-                raw = await chat_completion(
-                    self._judge.base_url,
-                    self._judge.api_key or "",
-                    self._judge.model,
-                    messages,
-                )
-                return parse_judge_response(raw)
-            except (LLMError, Exception) as exc:  # noqa: BLE001 - parse errors also retried
-                last_error = exc
-                await asyncio.sleep(0.5 * (attempt + 1))
-        raise last_error  # type: ignore[misc]
+        async def _judge_call() -> str:
+            return await chat_completion(
+                self._judge.base_url,
+                self._judge.api_key or "",
+                self._judge.model,
+                build_judge_messages(case.prompt, answer),
+            )
+
+        raw = await retry_llm_call(
+            _judge_call,
+            attempts=JUDGE_ATTEMPTS,
+            what=f"judge call (scan case {case.prompt_hash[:8]})",
+        )
+        return parse_judge_response(raw)

@@ -28,6 +28,12 @@ export function SelectDatasetsStep() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+        ⚠️ Built-in datasets contain sensitive test prompts (self-harm, violence, PII
+        extraction…). Cloud providers may block these requests or flag the account —
+        we recommend a small custom dataset first when testing an online model.
+      </div>
+
       <section>
         <h3 className="text-sm font-medium text-neutral-600 dark:text-neutral-300">Built-in</h3>
         <div className="mt-2 space-y-2">
