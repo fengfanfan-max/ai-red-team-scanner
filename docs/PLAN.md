@@ -208,10 +208,14 @@ SimulatedEngine    # SIMULATE=true：确定性伪回答+伪评分（演示/测�
   - ✅ 39 后端测试 + 23 前端测试全绿；无图表库依赖（CSS 进度条 + 语义色）
 
 **M6 — 打磨与 v1.0.0 发布**
-- [ ] Playwright E2E 全量固化（CI 内跑）
-- [ ] 文档完善：README 快速开始（两种部署）、架构说明、数据集贡献指南
-- [ ] 错误文案/加载态/无障碍走查；CHANGELOG；GitHub release v1.0.0
+- [x] Playwright E2E 全量固化（CI 内跑）
+- [x] 文档完善：README 快速开始（两种部署）、架构说明、数据集贡献指南
+- [x] 错误文案/加载态/无障碍走查；CHANGELOG；GitHub release v1.0.0
 - DoD：新用户按 README 十分钟跑通全流程；CI 全绿；release 发布
+  - ✅ README"十分钟跑通"（模拟引擎 + 免登录，零 key）；docs/DATASETS.md 贡献指南；CHANGELOG
+  - ✅ CI 增加 E2E job（起双服务 + 下载 Chromium + 跑全场景）；release.yml（tag → draft release）
+  - ✅ 本地等价验证全绿（39 后端 + 23 前端 + E2E）；git tag v1.0.0
+  - ⚠️ 推送到 GitHub 后：CI 全绿确认 + GitHub Release 发布（本环境无远程/无 Docker）
 
 ## 9. 测试策略
 

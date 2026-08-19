@@ -58,6 +58,47 @@ jobs:
         env:
           TEST_DATABASE_URL: postgresql+asyncpg://scanner:scanner@localhost:5432/scanner
 
+  e2e:
+    name: E2E (simulated engine)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Backend deps
+        working-directory: backend
+        run: uv sync --frozen
+      - name: Frontend deps
+        working-directory: frontend
+        run: npm ci
+      - name: Start backend (simulated)
+        working-directory: backend
+        env:
+          SIMULATE_SCAN: 'true'
+          DATABASE_URL: sqlite+aiosqlite:///./e2e.db
+        run: |
+          uv run alembic upgrade head
+          nohup uv run uvicorn app.main:app --port 8000 >/tmp/backend.log 2>&1 &
+      - name: Start frontend
+        working-directory: frontend
+        run: nohup npm run dev -- --port 5173 >/tmp/frontend.log 2>&1 &
+      - name: Wait for servers
+        run: |
+          for i in $(seq 1 30); do curl -sf http://localhost:8000/api/health && break; sleep 1; done
+          for i in $(seq 1 30); do curl -sf http://localhost:5173 >/dev/null && break; sleep 1; done
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Run E2E
+        working-directory: frontend
+        run: npx playwright test
+
   frontend:
     name: Frontend (lint + type-check + test + build)
     runs-on: ubuntu-latest

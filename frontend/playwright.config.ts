@@ -4,11 +4,9 @@ import { defineConfig } from '@playwright/test'
  * E2E config. Servers are expected to be running already:
  *   backend: SIMULATE_SCAN=true uvicorn on :8000 (no real LLM calls)
  *   frontend: vite dev on :5173 (proxies /api to the backend)
- * Run: pnpm/npm exec playwright test
- *
- * Uses the system Chrome (channel: 'chrome') so no browser download is
- * needed; CI can switch to `browserName: 'chromium'` with the official
- * install step instead.
+ * Run:
+ *   PLAYWRIGHT_SYSTEM_CHROME=1 npx playwright test   (local: system Chrome)
+ *   npx playwright install chromium && npx playwright test  (CI: downloaded)
  */
 export default defineConfig({
   testDir: './e2e',
@@ -16,7 +14,7 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:5173',
     trace: 'retain-on-failure',
-    channel: 'chrome',
+    ...(process.env.PLAYWRIGHT_SYSTEM_CHROME ? { channel: 'chrome' } : {}),
   },
-  projects: [{ name: 'system-chrome', use: { browserName: 'chromium' } }],
+  projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
 })
