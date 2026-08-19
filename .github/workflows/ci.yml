@@ -100,9 +100,12 @@ jobs:
         env:
           SIMULATE_SCAN: 'true'
           DATABASE_URL: sqlite+aiosqlite:///./e2e.db
+        # Use venv binaries directly (not `uv run`): a lingering uv process
+        # would hold the uv cache lock and time out setup-uv's cache-save
+        # post step (300s), failing the job after tests already passed.
         run: |
-          uv run alembic upgrade head
-          nohup uv run uvicorn app.main:app --port 8000 >/tmp/backend.log 2>&1 &
+          .venv/bin/alembic upgrade head
+          nohup .venv/bin/uvicorn app.main:app --port 8000 >/tmp/backend.log 2>&1 &
       - name: Start frontend
         working-directory: frontend
         run: nohup npm run dev -- --port 5173 >/tmp/frontend.log 2>&1 &
