@@ -17,6 +17,8 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.13'
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
       - name: Sync dependencies
         run: uv sync --frozen
       - name: Lint
@@ -51,6 +53,8 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.13'
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
       - name: Sync dependencies
         run: uv sync --frozen
       - name: Test (Postgres)
@@ -66,17 +70,31 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: '3.13'
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      # Playwright browsers are ~170MB — cache them so install is a no-op
+      # on cache hits (keyed on the lockfile so version bumps invalidate).
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
       - name: Backend deps
         working-directory: backend
         run: uv sync --frozen
       - name: Frontend deps
         working-directory: frontend
         run: npm ci
+      - name: Install Playwright browsers
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
       - name: Start backend (simulated)
         working-directory: backend
         env:
@@ -92,9 +110,6 @@ jobs:
         run: |
           for i in $(seq 1 30); do curl -sf http://localhost:8000/api/health && break; sleep 1; done
           for i in $(seq 1 30); do curl -sf http://localhost:5173 >/dev/null && break; sleep 1; done
-      - name: Install Playwright browsers
-        working-directory: frontend
-        run: npx playwright install --with-deps chromium
       - name: Run E2E
         working-directory: frontend
         run: npx playwright test
