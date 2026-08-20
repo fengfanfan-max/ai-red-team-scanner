@@ -44,6 +44,33 @@ class AIApplication(Base):
     )
 
 
+class JudgeModel(Base):
+    """A reusable judge endpoint config (cheap/local/cloud, OpenAI-compatible).
+
+    Scans reference a judge by id at creation time; the scan row keeps a
+    snapshot of the config, so later edits/deletes of the judge never affect
+    historical scans (and the engine only ever reads the snapshot).
+    """
+
+    __tablename__ = "judge_models"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True)
+    description: Mapped[str] = mapped_column(String(300), default="")
+    base_url: Mapped[str] = mapped_column(String(500))
+    api_key_cipher: Mapped[str] = mapped_column(Text, default="")
+    model_name: Mapped[str] = mapped_column(String(200))
+    created_by: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+
 class CustomDataset(Base):
     """User-imported dataset (JSON payload, same shape as builtin files)."""
 

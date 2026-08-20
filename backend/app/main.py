@@ -7,6 +7,7 @@ from app.api.applications import router as applications_router
 from app.api.auth import router as auth_router
 from app.api.dashboard import router as dashboard_router
 from app.api.datasets import router as datasets_router
+from app.api.judges import router as judges_router
 from app.api.scans import router as scans_router
 from app.core.config import get_settings
 from app.engine.manager import get_engine_manager
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(applications_router)
     app.include_router(datasets_router)
+    app.include_router(judges_router)
     app.include_router(scans_router)
     app.include_router(dashboard_router)
 

@@ -10,6 +10,7 @@ export interface CreateScanState {
   concurrency: number
   qpm: number
   failThreshold: number
+  judgeId: number | null
   judgeBaseUrl: string
   judgeModel: string
   judgeApiKey: string
@@ -23,6 +24,7 @@ interface CreateScanActions {
   setAlgorithm: (algorithm: string) => void
   toggleDataset: (ref: DatasetRef) => void
   setAdvanced: (patch: Partial<Pick<CreateScanState, 'concurrency' | 'qpm' | 'failThreshold'>>) => void
+  setJudgeId: (id: number | null) => void
   setJudgeConfig: (patch: Partial<Pick<CreateScanState, 'judgeBaseUrl' | 'judgeModel' | 'judgeApiKey'>>) => void
   reset: () => void
 }
@@ -37,6 +39,7 @@ const initialState: CreateScanState = {
   concurrency: 4,
   qpm: 60,
   failThreshold: 5.0,
+  judgeId: null,
   judgeBaseUrl: '',
   judgeModel: '',
   judgeApiKey: '',
@@ -60,6 +63,7 @@ export const useCreateScanStore = create<CreateScanState & CreateScanActions>((s
       }
     }),
   setAdvanced: (patch) => set(patch),
+  setJudgeId: (judgeId) => set({ judgeId }),
   setJudgeConfig: (patch) => set(patch),
   reset: () => set(initialState),
 }))

@@ -34,6 +34,9 @@ export function MainLayout() {
           <Link to="/scans" className="block rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800">
             Scans
           </Link>
+          <Link to="/judges" className="block rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800">
+            Judges
+          </Link>
           <Link to="/settings" className="block rounded px-2 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800">
             Settings
           </Link>

@@ -7,7 +7,7 @@ from app.api.deps import CurrentUser, DbDep, SettingsDep
 from app.core.crypto import encrypt_api_key
 from app.data.datasets import load_builtin_dataset
 from app.engine.manager import get_engine_manager
-from app.models import AIApplication, CustomDataset, Scan, ScanResult
+from app.models import AIApplication, CustomDataset, JudgeModel, Scan, ScanResult
 from app.schemas import (
     CategorySummary,
     DatasetRef,
@@ -95,6 +95,29 @@ async def create_scan(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="No cases to scan"
         )
 
+    judge_base_url: str | None = None
+    judge_model: str | None = None
+    judge_api_key_cipher: str = ""
+    if payload.judge is not None:
+        # Reference a preset JudgeModel (snapshot its config)…
+        if payload.judge.judge_id is not None:
+            preset = await db.get(JudgeModel, payload.judge.judge_id)
+            if preset is None:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND, detail="Judge not found"
+                )
+            judge_base_url = preset.base_url
+            judge_model = preset.model_name
+            # Ciphertext copied as-is — never decrypted in this path.
+            judge_api_key_cipher = preset.api_key_cipher
+        # …with inline overrides applied on top.
+        if payload.judge.base_url is not None:
+            judge_base_url = payload.judge.base_url
+        if payload.judge.model is not None:
+            judge_model = payload.judge.model
+        if payload.judge.api_key:
+            judge_api_key_cipher = encrypt_api_key(payload.judge.api_key, settings)
+
     scan = Scan(
         name=payload.name,
         application_id=payload.application_id,
@@ -103,13 +126,9 @@ async def create_scan(
         concurrency=payload.concurrency,
         qpm=payload.qpm,
         fail_threshold=payload.fail_threshold,
-        judge_base_url=payload.judge.base_url if payload.judge else None,
-        judge_model=payload.judge.model if payload.judge else None,
-        judge_api_key_cipher=(
-            encrypt_api_key(payload.judge.api_key, settings)
-            if payload.judge and payload.judge.api_key
-            else ""
-        ),
+        judge_base_url=judge_base_url,
+        judge_model=judge_model,
+        judge_api_key_cipher=judge_api_key_cipher,
         total_cases=total,
         created_by=user.id if user else None,
     )

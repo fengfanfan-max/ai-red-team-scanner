@@ -153,6 +153,37 @@ class PaginatedList(BaseModel, Generic[T]):
 
 
 # ============================================
+# Judge models (reusable judge endpoints)
+# ============================================
+
+class JudgeModelCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    description: str = Field(default="", max_length=300)
+    base_url: str = Field(min_length=4, max_length=500)
+    api_key: str = Field(default="", max_length=500)
+    model_name: str = Field(min_length=1, max_length=200)
+
+
+class JudgeModelUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    description: str | None = Field(default=None, max_length=300)
+    base_url: str | None = Field(default=None, min_length=4, max_length=500)
+    api_key: str | None = Field(default=None, max_length=500)
+    model_name: str | None = Field(default=None, min_length=1, max_length=200)
+
+
+class JudgeModelOut(BaseModel):
+    id: int
+    name: str
+    description: str
+    base_url: str
+    api_key_masked: str
+    model_name: str
+    created_at: datetime
+    updated_at: datetime
+
+
+# ============================================
 # Scans
 # ============================================
 
@@ -162,8 +193,13 @@ class DatasetRef(BaseModel):
 
 
 class JudgeConfig(BaseModel):
-    base_url: str = Field(min_length=4, max_length=500)
-    model: str = Field(min_length=1, max_length=200)
+    """Judge selection at scan creation: reference a preset JudgeModel
+    (judge_id) and/or override inline. The scan row snapshots the resolved
+    config, so later judge edits never affect historical scans."""
+
+    judge_id: int | None = None
+    base_url: str | None = Field(default=None, min_length=4, max_length=500)
+    model: str | None = Field(default=None, min_length=1, max_length=200)
     api_key: str = Field(default="", max_length=500)
 
 

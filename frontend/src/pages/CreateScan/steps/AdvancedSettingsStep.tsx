@@ -2,19 +2,21 @@ import { useQuery } from '@tanstack/react-query'
 
 import { listApplications } from '@/api/applications'
 import { listDatasets } from '@/api/datasets'
+import { listJudges } from '@/api/judges'
 import { useCreateScanStore } from '../stores/useCreateScanStore'
 
 /**
- * Step 5: concurrency/QPM/fail threshold + optional judge endpoint.
- * Shows the expected LLM call count (= cases × 2: target + judge) so the
- * cost is transparent before starting (CONTEXT.md).
+ * Step 5: concurrency/QPM/fail threshold + judge selection (preset or
+ * inline override). Shows the expected LLM call count (= cases × 2: target
+ * + judge) so the cost is transparent before starting (CONTEXT.md).
  */
 export function AdvancedSettingsStep() {
   const state = useCreateScanStore()
-  const { setAdvanced, setJudgeConfig } = state
+  const { setAdvanced, setJudgeId, setJudgeConfig } = state
 
   const { data: appsData } = useQuery({ queryKey: ['applications'], queryFn: listApplications })
   const { data: dsData } = useQuery({ queryKey: ['datasets'], queryFn: listDatasets })
+  const { data: judges = [] } = useQuery({ queryKey: ['judges'], queryFn: listJudges })
 
   const totalCases =
     state.datasetRefs.reduce((sum, ref) => {
@@ -83,28 +85,58 @@ export function AdvancedSettingsStep() {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-surface p-4">
-        <p className="text-sm font-medium">Judge model (optional)</p>
-        <p className="mt-1 text-xs text-neutral-500">
-          Defaults to the target model. For lower cost, point this at a cheap or local
-          OpenAI-compatible endpoint (e.g. Ollama).
+      <div className="rounded-lg border border-border bg-card p-4">
+        <p className="text-sm font-medium">Judge model</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Pick a preset judge, or leave it to follow the target model. For lower cost, use a
+          cheap or local endpoint (e.g. Ollama).
         </p>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setJudgeId(null)}
+            className={`rounded-full border px-3 py-1 text-xs ${
+              state.judgeId === null && !state.judgeModel
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            Follow target (default)
+          </button>
+          {judges.map((judge) => (
+            <button
+              key={judge.id}
+              type="button"
+              onClick={() => setJudgeId(judge.id)}
+              className={`rounded-full border px-3 py-1 text-xs ${
+                state.judgeId === judge.id
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:bg-muted'
+              }`}
+              title={`${judge.baseUrl} · ${judge.modelName}`}
+            >
+              {judge.name}
+            </button>
+          ))}
+        </div>
+
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <input
-            placeholder="https://localhost:11434/v1"
+            placeholder="override base URL (optional)"
             value={state.judgeBaseUrl}
             onChange={(e) => setJudgeConfig({ judgeBaseUrl: e.target.value })}
             className={inputClass}
           />
           <input
-            placeholder="model name"
+            placeholder="override model name (optional)"
             value={state.judgeModel}
             onChange={(e) => setJudgeConfig({ judgeModel: e.target.value })}
             className={inputClass}
           />
           <input
             type="password"
-            placeholder="api key (optional)"
+            placeholder="override api key (optional)"
             value={state.judgeApiKey}
             onChange={(e) => setJudgeConfig({ judgeApiKey: e.target.value })}
             className={inputClass}

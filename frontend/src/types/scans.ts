@@ -66,5 +66,10 @@ export interface ScanCreatePayload {
   concurrency: number
   qpm: number
   fail_threshold: number
-  judge?: { base_url: string; model: string; api_key: string }
+  judge?: {
+    judge_id?: number
+    base_url?: string
+    model?: string
+    api_key?: string
+  }
 }

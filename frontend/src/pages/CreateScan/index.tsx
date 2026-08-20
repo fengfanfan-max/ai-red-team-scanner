@@ -27,10 +27,11 @@ export function CreateScanPage() {
         qpm: store.qpm,
         fail_threshold: store.failThreshold,
         judge:
-          store.judgeBaseUrl && store.judgeModel
+          store.judgeId !== null || store.judgeBaseUrl || store.judgeModel
             ? {
-                base_url: store.judgeBaseUrl,
-                model: store.judgeModel,
+                judge_id: store.judgeId ?? undefined,
+                base_url: store.judgeBaseUrl || undefined,
+                model: store.judgeModel || undefined,
                 api_key: store.judgeApiKey,
               }
             : undefined,
