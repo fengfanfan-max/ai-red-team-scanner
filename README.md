@@ -81,7 +81,7 @@ CI（GitHub Actions）覆盖：后端 lint/单测、Postgres 方言测试、前�
 │   │   └── engine/   # 扫描引擎（限速/judge/双实现/任务管理）
 │   ├── alembic/      # 数据库迁移
 │   └── tests/
-├── frontend/         # React 19 + Vite 7 SPA
+├── frontend/         # React 19 + Vite 7 SPA（Tailwind 4 + shadcn/ui/Radix，见 ADR-0005）
 │   ├── src/
 │   └── e2e/          # Playwright 场景
 ├── docs/
