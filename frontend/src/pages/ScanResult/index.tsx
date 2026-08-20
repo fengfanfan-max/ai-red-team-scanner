@@ -383,8 +383,10 @@ function FailuresTable({
 function CaseDrawer({ detail, onClose }: { detail: CaseDetail; onClose: () => void }) {
   return (
     <Sheet open onOpenChange={(next) => !next && onClose()}>
-      <SheetContent side="right" className="w-full max-w-md overflow-y-auto">
-        <SheetHeader>
+      <SheetContent side="right" className="w-full max-w-md overflow-y-auto p-6">
+        {/* SheetHeader has its own p-4; drop it so content padding is
+            controlled uniformly by SheetContent's p-6. */}
+        <SheetHeader className="p-0">
           <SheetTitle>Case detail</SheetTitle>
         </SheetHeader>
 
