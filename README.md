@@ -17,6 +17,17 @@
 
 ## 十分钟跑通全流程
 
+**一键启动（推荐）**：
+
+```bash
+./dev.sh        # demo 模式：模拟扫描引擎 + 免登录，零配置零 key
+./dev.sh real   # 完整模式：真实 LLM + 认证
+```
+
+脚本自动装依赖、跑迁移、并行启动两端（后端 :8000 + 前端 :5173），Ctrl+C 全部停止。可覆盖 `BACKEND_PORT`/`FRONTEND_PORT`/`SIMULATE_SCAN`/`AUTH_MODE`。
+
+手动分步启动（可选）：
+
 ```bash
 # 前置：Python ≥ 3.11（uv）、Node ≥ 22
 
