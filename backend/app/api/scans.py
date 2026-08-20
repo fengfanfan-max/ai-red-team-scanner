@@ -121,6 +121,42 @@ async def create_scan(
     return _to_out(scan)
 
 
+@router.post("/{scan_id}/rerun", response_model=ScanOut, status_code=status.HTTP_201_CREATED)
+async def rerun_scan(
+    scan_id: int, db: DbDep, settings: SettingsDep, user: CurrentUser
+) -> ScanOut:
+    """Re-run a scan: create a NEW scan from the original's configuration.
+
+    Fully independent of the original (fresh id, fresh results). The judge
+    api key is copied as ciphertext — never decrypted or re-exposed.
+    """
+    original = await db.get(Scan, scan_id)
+    if original is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scan not found")
+
+    # Configuration snapshot; counters/status/results intentionally NOT copied.
+    scan = Scan(
+        name=f"{original.name} (rerun)",
+        application_id=original.application_id,
+        algorithm=original.algorithm,
+        dataset_refs=original.dataset_refs,
+        concurrency=original.concurrency,
+        qpm=original.qpm,
+        fail_threshold=original.fail_threshold,
+        judge_base_url=original.judge_base_url,
+        judge_model=original.judge_model,
+        judge_api_key_cipher=original.judge_api_key_cipher,
+        total_cases=original.total_cases,
+        created_by=user.id if user else None,
+    )
+    db.add(scan)
+    await db.commit()
+    await db.refresh(scan)
+
+    get_engine_manager(settings).start(scan.id)
+    return _to_out(scan)
+
+
 @router.get("", response_model=PaginatedList[ScanOut])
 async def list_scans(
     db: DbDep,

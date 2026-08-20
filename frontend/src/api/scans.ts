@@ -20,3 +20,7 @@ export function getScanProgress(id: number): Promise<ScanProgress> {
 export function createScan(payload: ScanCreatePayload): Promise<Scan> {
   return api<Scan>('/scans', { method: 'POST', body: payload })
 }
+
+export function rerunScan(id: number): Promise<Scan> {
+  return api<Scan>(`/scans/${id}/rerun`, { method: 'POST' })
+}

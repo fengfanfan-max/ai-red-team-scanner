@@ -121,6 +121,60 @@ async def test_cases_pagination_and_filter(sim_client) -> None:
 
 
 @pytest.mark.asyncio
+async def test_rerun_creates_independent_copy(sim_client) -> None:
+    c, headers = sim_client
+    completed = await _completed_scan(c, headers)  # 15/15 finished
+
+    rerun = await c.post(f"/api/scans/{completed['id']}/rerun", headers=headers)
+    assert rerun.status_code == 201
+    body = rerun.json()
+
+    # new, independent scan with copied configuration
+    orig = (await c.get(f"/api/scans/{completed['id']}", headers=headers)).json()
+    assert body["id"] != orig["id"]
+    assert body["name"] == f"{orig['name']} (rerun)"
+    assert body["application_id"] == orig["application_id"]
+    assert body["datasets"] == orig["datasets"]
+    assert body["concurrency"] == orig["concurrency"]
+    assert body["qpm"] == orig["qpm"]
+    assert body["fail_threshold"] == orig["fail_threshold"]
+    assert body["total_cases"] == 15
+    assert body["status"] in ("pending", "running")
+    # fresh counters, original untouched
+    assert body["completed_cases"] == 0
+    assert orig["completed_cases"] == 15
+
+    # rerun completes on its own
+    for _ in range(100):
+        prog = (await c.get(f"/api/scans/{body['id']}/progress", headers=headers)).json()
+        if prog["status"] == "completed":
+            break
+        await asyncio.sleep(0.05)
+    assert prog["completed_cases"] == 15
+
+    # judge config is copied as well (ciphertext, never decrypted)
+    judge_scan = await c.post(
+        "/api/scans",
+        json={
+            "name": "judge-copy",
+            "application_id": completed["app_id"],
+            "datasets": [{"source": "builtin", "ref": "Content Safety"}],
+            "judge": {"base_url": "http://localhost:11434/v1", "model": "qwen2.5:3b"},
+        },
+        headers=headers,
+    )
+    judge_original = judge_scan.json()
+    judge_rerun = (
+        await c.post(f"/api/scans/{judge_original['id']}/rerun", headers=headers)
+    ).json()
+    assert judge_rerun["judge_model"] == "qwen2.5:3b"
+    assert judge_rerun["judge_base_url"] == "http://localhost:11434/v1"
+
+    # missing scan → 404
+    assert (await c.post("/api/scans/99999/rerun", headers=headers)).status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_scan_detail_exposes_judge_config(sim_client) -> None:
     c, headers = sim_client
     scan = await _completed_scan(c, headers)

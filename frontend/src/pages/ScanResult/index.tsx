@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
-import { getScan } from '@/api/scans'
+import { getScan, rerunScan } from '@/api/scans'
 import { getScanResults, listScanCases } from '@/api/results'
 import { CaseStatusBadge, ScanStatusBadge, ToneProgress } from '@/components/ScanStatusBadge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -33,11 +33,21 @@ export function ScanResultPage() {
   const { scanId } = useParams()
   const id = Number(scanId)
   const [selected, setSelected] = useState<CaseDetail | null>(null)
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   const { data: scan, isLoading: scanLoading, isError: scanError } = useQuery({
     queryKey: ['scans', id],
     queryFn: () => getScan(id),
     enabled: Number.isFinite(id),
+  })
+
+  const rerunMutation = useMutation({
+    mutationFn: () => rerunScan(id),
+    onSuccess: (newScan) => {
+      queryClient.invalidateQueries({ queryKey: ['scans'] })
+      navigate(`/scans/${newScan.id}`)
+    },
   })
 
   const active = scan?.status === 'pending' || scan?.status === 'running'
@@ -53,7 +63,24 @@ export function ScanResultPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <ScanHeader scan={scan} />
+      <div className="flex items-start justify-between gap-4">
+        <ScanHeader scan={scan} />
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={() => rerunMutation.mutate()}
+            disabled={
+              rerunMutation.isPending ||
+              scan.status === 'pending' ||
+              scan.status === 'running'
+            }
+            className="rounded-md border border-input px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted disabled:opacity-40"
+            title="Run the same configuration again as a new scan"
+          >
+            {rerunMutation.isPending ? 'Rerunning…' : 'Rerun'}
+          </button>
+          <ScanStatusBadge status={scan.status} />
+        </div>
+      </div>
 
       {scan.status === 'failed' && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
@@ -142,7 +169,6 @@ function ScanHeader({ scan }: { scan: Scan }) {
             </div>
           </dl>
         </div>
-        <ScanStatusBadge status={scan.status} />
       </div>
     </div>
   )

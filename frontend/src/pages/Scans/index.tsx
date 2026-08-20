@@ -1,11 +1,11 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 
-import { listScans } from '@/api/scans'
+import { listScans, rerunScan } from '@/api/scans'
 import { ScanStatusBadge, ToneProgress } from '@/components/ScanStatusBadge'
 import type { Scan } from '@/types/scans'
 
-function ScanCard({ scan }: { scan: Scan }) {
+function ScanCard({ scan, onRerun }: { scan: Scan; onRerun: (id: number) => void }) {
   const active = scan.status === 'pending' || scan.status === 'running'
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -17,7 +17,17 @@ function ScanCard({ scan }: { scan: Scan }) {
         >
           {scan.name}
         </Link>
-        <ScanStatusBadge status={scan.status} />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onRerun(scan.id)}
+            disabled={active}
+            className="rounded border border-border px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted disabled:opacity-40"
+            title="Run the same configuration again"
+          >
+            Rerun
+          </button>
+          <ScanStatusBadge status={scan.status} />
+        </div>
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
         {scan.completedCases}/{scan.totalCases} cases · {scan.algorithm} · app #{scan.applicationId}
@@ -75,6 +85,12 @@ export function ScansPage() {
     },
   })
 
+  const queryClient = useQueryClient()
+  const rerunMutation = useMutation({
+    mutationFn: (id: number) => rerunScan(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['scans'] }),
+  })
+
   return (
     <div className="mx-auto max-w-4xl">
       <div className="flex items-center justify-between">
@@ -108,7 +124,9 @@ export function ScansPage() {
       )}
 
       <div className="mt-6 space-y-3">
-        {data?.items.map((scan) => <ScanCard key={scan.id} scan={scan} />)}
+        {data?.items.map((scan) => (
+          <ScanCard key={scan.id} scan={scan} onRerun={(id) => rerunMutation.mutate(id)} />
+        ))}
       </div>
     </div>
   )

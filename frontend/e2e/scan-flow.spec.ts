@@ -75,6 +75,11 @@ test('full scan flow: register → app → scan → completed', async ({ page })
   await page.getByRole('tab', { name: /Failures/ }).click()
   await expect(page.getByRole('tab', { name: /Failures/ })).toBeVisible()
 
+  // --- rerun: same config as a new scan, navigates to the new one ---
+  await page.getByRole('button', { name: 'Rerun' }).click()
+  await expect(page).toHaveURL(/\/scans\/\d+$/)
+  await expect(page.getByText(/\(rerun\)/).first()).toBeVisible()
+
   // --- dashboard ---
   await page.goto('/home')
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
