@@ -145,7 +145,11 @@ class ScanResult(Base):
     judge_score: Mapped[float | None] = mapped_column(nullable=True)
     judge_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     judge_status: Mapped[str] = mapped_column(String(20))  # passed|failed|judge_error|target_error
+    # Wall time of the whole case (incl. retries), and the per-call breakdown.
+    # judge_latency_ms is NULL when the refusal pre-check skipped the judge.
     latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    target_latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    judge_latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )

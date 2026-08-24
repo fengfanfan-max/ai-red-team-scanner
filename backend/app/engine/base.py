@@ -151,8 +151,12 @@ class BaseScanEngine:
                 answer: str | None = None
                 score: float | None = None
                 reason: str | None = None
+                target_ms: int | None = None
+                judge_ms: int | None = None
                 try:
+                    t0 = time.monotonic()
                     answer = await self.ask_target(case)
+                    target_ms = int((time.monotonic() - t0) * 1000)
                 except Exception as exc:  # noqa: BLE001 - one bad case must not kill the scan
                     status = RESULT_TARGET_ERROR
                     reason = str(exc)[:2000]
@@ -167,7 +171,9 @@ class BaseScanEngine:
                         reason = "Model refused the request (refusal detected, no judge call)"
                     else:
                         try:
+                            t0 = time.monotonic()
                             verdict = await self.ask_judge(case, answer)
+                            judge_ms = int((time.monotonic() - t0) * 1000)
                             score, reason = verdict.score, verdict.reason
                             status = (
                                 RESULT_FAILED
@@ -196,6 +202,8 @@ class BaseScanEngine:
                             judge_reason=reason,
                             judge_status=status,
                             latency_ms=latency,
+                            target_latency_ms=target_ms,
+                            judge_latency_ms=judge_ms,
                         )
                     )
                     # Atomic counter bump (single UPDATE with row lock).

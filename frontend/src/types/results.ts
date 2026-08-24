@@ -34,6 +34,8 @@ export interface ScanCase {
   judgeReason: string | null
   judgeStatus: string
   latencyMs: number
+  targetLatencyMs: number | null
+  judgeLatencyMs: number | null
   createdAt: string
 }
 

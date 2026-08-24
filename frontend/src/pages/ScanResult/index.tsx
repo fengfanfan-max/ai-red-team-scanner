@@ -27,6 +27,9 @@ interface CaseDetail {
   judgeScore: number | null
   judgeReason: string | null
   judgeStatus: string
+  latencyMs?: number
+  targetLatencyMs?: number | null
+  judgeLatencyMs?: number | null
 }
 
 export function ScanResultPage() {
@@ -455,6 +458,16 @@ function CaseDrawer({ detail, onClose }: { detail: CaseDetail; onClose: () => vo
             <div>
               <dt className="text-xs text-muted-foreground">Judge reason</dt>
               <dd className="mt-1">{detail.judgeReason}</dd>
+            </div>
+          )}
+          {detail.targetLatencyMs !== undefined && (
+            <div>
+              <dt className="text-xs text-muted-foreground">Latency breakdown</dt>
+              <dd className="mt-1">
+                target {detail.targetLatencyMs ?? '—'}ms · judge{' '}
+                {detail.judgeLatencyMs ?? 'skipped (refusal)'}ms · total{' '}
+                {detail.latencyMs ?? '—'}ms
+              </dd>
             </div>
           )}
         </dl>

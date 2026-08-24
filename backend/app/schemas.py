@@ -292,6 +292,8 @@ class ScanCaseOut(BaseModel):
     judge_reason: str | None
     judge_status: str
     latency_ms: int
+    target_latency_ms: int | None
+    judge_latency_ms: int | None
     created_at: datetime
 
 
