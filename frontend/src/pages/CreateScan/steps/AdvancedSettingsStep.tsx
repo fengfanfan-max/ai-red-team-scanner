@@ -122,38 +122,36 @@ export function AdvancedSettingsStep() {
           ))}
         </div>
 
-        <div className="mt-3 grid gap-3 sm:grid-cols-3">
-          <input
-            autoComplete="off"
-            disabled={judgePresetSelected}
-            placeholder={judgePresetSelected ? 'preset selected' : 'override base URL (optional)'}
-            value={state.judgeBaseUrl}
-            onChange={(e) => setJudgeConfig({ judgeBaseUrl: e.target.value })}
-            className={`${inputClass} disabled:opacity-50`}
-          />
-          <input
-            autoComplete="off"
-            disabled={judgePresetSelected}
-            placeholder={judgePresetSelected ? 'preset selected' : 'override model name (optional)'}
-            value={state.judgeModel}
-            onChange={(e) => setJudgeConfig({ judgeModel: e.target.value })}
-            className={`${inputClass} disabled:opacity-50`}
-          />
-          <input
-            type="password"
-            autoComplete="new-password"
-            disabled={judgePresetSelected}
-            placeholder={judgePresetSelected ? 'preset selected' : 'override api key (optional)'}
-            value={state.judgeApiKey}
-            onChange={(e) => setJudgeConfig({ judgeApiKey: e.target.value })}
-            className={`${inputClass} disabled:opacity-50`}
-          />
-        </div>
-        {judgePresetSelected && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Preset selected — inline overrides are disabled. Edit any override field to switch to
-            custom.
+        {judgePresetSelected ? (
+          <p className="mt-3 rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
+            Using <span className="font-medium text-foreground">{state.judgeId && judges.find((j) => j.id === state.judgeId)?.name}</span> —
+            deselect the pill above to configure a custom judge instead.
           </p>
+        ) : (
+          <div className="mt-3 grid gap-3 sm:grid-cols-3">
+            <input
+              autoComplete="off"
+              placeholder="override base URL (optional)"
+              value={state.judgeBaseUrl}
+              onChange={(e) => setJudgeConfig({ judgeBaseUrl: e.target.value })}
+              className={inputClass}
+            />
+            <input
+              autoComplete="off"
+              placeholder="override model name (optional)"
+              value={state.judgeModel}
+              onChange={(e) => setJudgeConfig({ judgeModel: e.target.value })}
+              className={inputClass}
+            />
+            <input
+              type="password"
+              autoComplete="new-password"
+              placeholder="override api key (optional)"
+              value={state.judgeApiKey}
+              onChange={(e) => setJudgeConfig({ judgeApiKey: e.target.value })}
+              className={inputClass}
+            />
+          </div>
         )}
       </div>
 
