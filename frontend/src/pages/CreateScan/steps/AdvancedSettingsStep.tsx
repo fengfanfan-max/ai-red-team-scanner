@@ -122,12 +122,7 @@ export function AdvancedSettingsStep() {
           ))}
         </div>
 
-        {judgePresetSelected ? (
-          <p className="mt-3 rounded-md border border-border bg-muted/50 p-3 text-xs text-muted-foreground">
-            Using <span className="font-medium text-foreground">{state.judgeId && judges.find((j) => j.id === state.judgeId)?.name}</span> —
-            deselect the pill above to configure a custom judge instead.
-          </p>
-        ) : (
+        {judgePresetSelected ? null : (
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <input
               autoComplete="off"
