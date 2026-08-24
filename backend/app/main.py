@@ -10,11 +10,13 @@ from app.api.datasets import router as datasets_router
 from app.api.judges import router as judges_router
 from app.api.scans import router as scans_router
 from app.core.config import get_settings
+from app.core.logging import setup_logging
+from app.core.middleware import RequestLogMiddleware
 from app.engine.manager import get_engine_manager
 
-# Engine/manager loggers must be visible by default (uvicorn does not
-# configure the root logger); otherwise background-task errors vanish.
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+# Configure logging before any logger is used (level via LOG_LEVEL,
+# optional rotating file via LOG_FILE — see app/core/logging.py).
+setup_logging()
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -32,6 +34,8 @@ async def lifespan(_: FastAPI):
 def create_app() -> FastAPI:
     app = FastAPI(title=settings.app_name, version=settings.version, lifespan=lifespan)
     app.state.settings = settings
+
+    app.add_middleware(RequestLogMiddleware)
 
     app.include_router(auth_router)
     app.include_router(applications_router)

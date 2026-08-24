@@ -25,17 +25,29 @@ interface RequestOptions {
  * - snake_case → camelCase conversion (humps)
  * - error normalization: non-2xx → ApiError(status, detail)
  * - 401 → clear session (session expired / invalid token)
+ * - dev-only request logging (browser console, never in production builds)
  */
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   const token = useSessionStore.getState().token
   if (token) headers.Authorization = `Bearer ${token}`
 
+  if (import.meta.env.DEV) {
+    console.info(`[api] ${options.method ?? 'GET'} ${path}`)
+  }
+  const started = performance.now()
+
   const res = await fetch(`/api${path}`, {
     method: options.method ?? 'GET',
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
   })
+
+  if (import.meta.env.DEV) {
+    console.info(
+      `[api] ${options.method ?? 'GET'} ${path} → ${res.status} (${Math.round(performance.now() - started)}ms)`
+    )
+  }
 
   if (res.status === 401) {
     useSessionStore.getState().clearSession()
@@ -50,6 +62,9 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
       }
     } catch {
       // non-JSON error body; keep statusText
+    }
+    if (import.meta.env.DEV) {
+      console.error(`[api] ${options.method ?? 'GET'} ${path} failed: ${detail}`)
     }
     throw new ApiError(res.status, detail)
   }
