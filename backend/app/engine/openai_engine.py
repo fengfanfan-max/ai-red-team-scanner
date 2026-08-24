@@ -4,7 +4,7 @@ Engine instances are created PER SCAN by the manager, so per-scan config
 resolved in `prepare()` can live on `self` without cross-scan races.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from app.core.config import Settings
 from app.core.crypto import decrypt_api_key
@@ -22,6 +22,7 @@ class _Endpoint:
     base_url: str
     model: str
     api_key: str | None
+    options: dict = field(default_factory=dict)
 
 
 class OpenAIChatEngine(BaseScanEngine):
@@ -46,7 +47,9 @@ class OpenAIChatEngine(BaseScanEngine):
                 if scan.judge_api_key_cipher
                 else None
             )
-            self._judge = _Endpoint(scan.judge_base_url, scan.judge_model, judge_key)
+            self._judge = _Endpoint(
+                scan.judge_base_url, scan.judge_model, judge_key, scan.judge_options or {}
+            )
         else:
             # Default: judge follows the target endpoint (documented trade-off:
             # users are guided to configure a cheaper/local judge instead).
@@ -75,6 +78,7 @@ class OpenAIChatEngine(BaseScanEngine):
                 self._judge.api_key or "",
                 self._judge.model,
                 build_judge_messages(case.prompt, answer),
+                extra_body=self._judge.options or None,
             )
 
         raw = await retry_llm_call(

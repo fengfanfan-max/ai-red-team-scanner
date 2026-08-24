@@ -162,6 +162,8 @@ class JudgeModelCreate(BaseModel):
     base_url: str = Field(min_length=4, max_length=500)
     api_key: str = Field(default="", max_length=500)
     model_name: str = Field(min_length=1, max_length=200)
+    # Provider-specific request options, e.g. {"enable_thinking": false}.
+    options: dict = Field(default_factory=dict)
 
 
 class JudgeModelUpdate(BaseModel):
@@ -170,6 +172,7 @@ class JudgeModelUpdate(BaseModel):
     base_url: str | None = Field(default=None, min_length=4, max_length=500)
     api_key: str | None = Field(default=None, max_length=500)
     model_name: str | None = Field(default=None, min_length=1, max_length=200)
+    options: dict | None = None
 
 
 class JudgeModelOut(BaseModel):
@@ -179,6 +182,7 @@ class JudgeModelOut(BaseModel):
     base_url: str
     api_key_masked: str
     model_name: str
+    options: dict
     created_at: datetime
     updated_at: datetime
 
@@ -235,6 +239,7 @@ class ScanOut(BaseModel):
     # Judge configuration visibility (never the judge api key).
     judge_model: str | None
     judge_base_url: str | None
+    judge_options: dict
     created_at: datetime
     started_at: datetime | None
     finished_at: datetime | None

@@ -125,3 +125,53 @@ async def test_scan_references_preset_judge(auth_client) -> None:
         headers=headers,
     )
     assert bad.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_judge_options_snapshotted_into_scan(auth_client) -> None:
+    """Provider options (e.g. enable_thinking: false) travel preset → snapshot
+    → rerun, and stay on the snapshot after the preset is deleted."""
+    c, headers = auth_client
+
+    judge = (
+        await c.post(
+            "/api/judges",
+            json={**JUDGE_PAYLOAD, "options": {"enable_thinking": False}},
+            headers=headers,
+        )
+    ).json()
+    assert judge["options"] == {"enable_thinking": False}
+
+    app_resp = await c.post(
+        "/api/applications",
+        json={
+            "name": "Target",
+            "base_url": "https://api.openai.com/v1",
+            "api_key": "sk-fake123456",
+            "model_name": "gpt-4o-mini",
+        },
+        headers=headers,
+    )
+    app_id = app_resp.json()["id"]
+
+    scan = (
+        await c.post(
+            "/api/scans",
+            json={
+                "name": "options-scan",
+                "application_id": app_id,
+                "datasets": [{"source": "builtin", "ref": "Content Safety"}],
+                "judge": {"judge_id": judge["id"]},
+            },
+            headers=headers,
+        )
+    ).json()
+    assert scan["judge_options"] == {"enable_thinking": False}
+
+    rerun = (await c.post(f"/api/scans/{scan['id']}/rerun", headers=headers)).json()
+    assert rerun["judge_options"] == {"enable_thinking": False}
+
+    # snapshot survives preset deletion
+    await c.delete(f"/api/judges/{judge['id']}", headers=headers)
+    detail = (await c.get(f"/api/scans/{scan['id']}", headers=headers)).json()
+    assert detail["judge_options"] == {"enable_thinking": False}

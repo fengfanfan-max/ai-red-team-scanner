@@ -18,6 +18,7 @@ def _to_out(judge: JudgeModel, settings: SettingsDep) -> JudgeModelOut:
         base_url=judge.base_url,
         api_key_masked=mask_api_key(plain) if plain else "",
         model_name=judge.model_name,
+        options=judge.options,
         created_at=judge.created_at,
         updated_at=judge.updated_at,
     )
@@ -44,6 +45,7 @@ async def create_judge(
         base_url=payload.base_url,
         api_key_cipher=encrypt_api_key(payload.api_key, settings) if payload.api_key else "",
         model_name=payload.model_name,
+        options=payload.options,
         created_by=user.id if user else None,
     )
     db.add(judge)

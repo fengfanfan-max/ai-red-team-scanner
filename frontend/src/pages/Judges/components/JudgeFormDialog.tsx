@@ -3,6 +3,11 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
+/** Maps the checkbox to the provider option (SiliconFlow reasoning models). */
+export function optionsFromForm(values: { disableThinking?: boolean }): Record<string, unknown> {
+  return values.disableThinking ? { enable_thinking: false } : {}
+}
+
 import {
   Dialog,
   DialogContent,
@@ -19,6 +24,7 @@ const judgeSchema = z.object({
   baseUrl: z.string().min(4, 'Base URL is required').max(500),
   modelName: z.string().min(1, 'Model name is required').max(200),
   apiKey: z.string().max(500).optional().default(''),
+  disableThinking: z.boolean().optional().default(false),
 })
 
 export type JudgeFormValues = z.input<typeof judgeSchema>
@@ -41,7 +47,14 @@ export function JudgeFormDialog({ open, judge, onClose, onSubmit }: Props) {
     formState: { errors, isSubmitting },
   } = useForm<JudgeFormValues>({
     resolver: zodResolver(judgeSchema),
-    defaultValues: { name: '', description: '', baseUrl: '', modelName: '', apiKey: '' },
+    defaultValues: {
+      name: '',
+      description: '',
+      baseUrl: '',
+      modelName: '',
+      apiKey: '',
+      disableThinking: false,
+    },
   })
 
   useEffect(() => {
@@ -52,6 +65,7 @@ export function JudgeFormDialog({ open, judge, onClose, onSubmit }: Props) {
         baseUrl: judge?.baseUrl ?? '',
         modelName: judge?.modelName ?? '',
         apiKey: '',
+        disableThinking: judge?.options?.enable_thinking === false,
       })
     }
   }, [open, judge, reset])
@@ -133,6 +147,11 @@ export function JudgeFormDialog({ open, judge, onClose, onSubmit }: Props) {
               placeholder={judge ? judge.apiKeyMasked || '(none)' : 'optional — local endpoints need none'}
             />
           </div>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <input type="checkbox" {...register('disableThinking')} />
+            Disable thinking (reasoning models: faster judge calls, e.g. SiliconFlow
+            enable_thinking=false)
+          </label>
           <DialogFooter>
             <button
               type="button"

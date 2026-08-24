@@ -99,13 +99,21 @@ async def chat_completion(
     model: str,
     messages: list[dict[str, str]],
     request_timeout: httpx.Timeout = CHAT_COMPLETIONS_TIMEOUT,
+    extra_body: dict[str, Any] | None = None,
 ) -> str:
-    """Call chat/completions and return the assistant message content."""
+    """Call chat/completions and return the assistant message content.
+
+    `extra_body` merges provider-specific options (e.g. SiliconFlow's
+    `enable_thinking: false` for reasoning models) into the payload; only
+    sent when explicitly configured on a judge preset.
+    """
     url = build_chat_url(base_url)
     payload: dict[str, Any] = {
         "model": model,
         "messages": messages,
     }
+    if extra_body:
+        payload.update(extra_body)
     headers = build_auth_headers(api_key)
     try:
         async with httpx.AsyncClient(timeout=request_timeout) as client:

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { createJudge, deleteJudge, listJudges, updateJudge } from '@/api/judges'
 import { ConfirmDialog } from '@/components/ConfirmDialog'
 import type { JudgeModel } from '@/types/judges'
-import { JudgeFormDialog, type JudgeFormValues } from './components/JudgeFormDialog'
+import { JudgeFormDialog, optionsFromForm, type JudgeFormValues } from './components/JudgeFormDialog'
 
 export function JudgesPage() {
   const queryClient = useQueryClient()
@@ -27,6 +27,7 @@ export function JudgesPage() {
         base_url: values.baseUrl,
         model_name: values.modelName,
         api_key: values.apiKey || undefined,
+        options: optionsFromForm(values),
       }),
     onSuccess: async () => {
       await invalidate()
@@ -42,6 +43,7 @@ export function JudgesPage() {
         base_url: values.baseUrl,
         model_name: values.modelName,
         api_key: values.apiKey || undefined,
+        options: optionsFromForm(values),
       }),
     onSuccess: async () => {
       await invalidate()

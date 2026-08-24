@@ -60,6 +60,9 @@ class JudgeModel(Base):
     base_url: Mapped[str] = mapped_column(String(500))
     api_key_cipher: Mapped[str] = mapped_column(Text, default="")
     model_name: Mapped[str] = mapped_column(String(200))
+    # Provider-specific request options, e.g. {"enable_thinking": false} for
+    # SiliconFlow reasoning models. Merged verbatim into the payload.
+    options: Mapped[dict] = mapped_column(JSON, default=dict)
     created_by: Mapped[int | None] = mapped_column(
         ForeignKey("users.id", ondelete="SET NULL"), nullable=True
     )
@@ -109,6 +112,7 @@ class Scan(Base):
     judge_base_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     judge_model: Mapped[str | None] = mapped_column(String(200), nullable=True)
     judge_api_key_cipher: Mapped[str] = mapped_column(Text, default="")
+    judge_options: Mapped[dict] = mapped_column(JSON, default=dict)
     total_cases: Mapped[int] = mapped_column(Integer, default=0)
     completed_cases: Mapped[int] = mapped_column(Integer, default=0)
     passed_cases: Mapped[int] = mapped_column(Integer, default=0)

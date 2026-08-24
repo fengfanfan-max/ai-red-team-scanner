@@ -51,6 +51,7 @@ def _to_out(scan: Scan) -> ScanOut:
         progress_pct=_progress_pct(scan),
         judge_model=scan.judge_model,
         judge_base_url=scan.judge_base_url,
+        judge_options=scan.judge_options,
         created_at=scan.created_at,
         started_at=scan.started_at,
         finished_at=scan.finished_at,
@@ -98,6 +99,7 @@ async def create_scan(
     judge_base_url: str | None = None
     judge_model: str | None = None
     judge_api_key_cipher: str = ""
+    judge_options: dict = {}
     if payload.judge is not None:
         # Reference a preset JudgeModel (snapshot its config)…
         if payload.judge.judge_id is not None:
@@ -110,6 +112,7 @@ async def create_scan(
             judge_model = preset.model_name
             # Ciphertext copied as-is — never decrypted in this path.
             judge_api_key_cipher = preset.api_key_cipher
+            judge_options = preset.options
         # …with inline overrides applied on top.
         if payload.judge.base_url is not None:
             judge_base_url = payload.judge.base_url
@@ -129,6 +132,7 @@ async def create_scan(
         judge_base_url=judge_base_url,
         judge_model=judge_model,
         judge_api_key_cipher=judge_api_key_cipher,
+        judge_options=judge_options,
         total_cases=total,
         created_by=user.id if user else None,
     )
@@ -165,6 +169,7 @@ async def rerun_scan(
         judge_base_url=original.judge_base_url,
         judge_model=original.judge_model,
         judge_api_key_cipher=original.judge_api_key_cipher,
+        judge_options=original.judge_options,
         total_cases=original.total_cases,
         created_by=user.id if user else None,
     )
