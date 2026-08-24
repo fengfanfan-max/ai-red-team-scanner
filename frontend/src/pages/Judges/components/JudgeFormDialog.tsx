@@ -65,7 +65,10 @@ export function JudgeFormDialog({ open, judge, onClose, onSubmit }: Props) {
         baseUrl: judge?.baseUrl ?? '',
         modelName: judge?.modelName ?? '',
         apiKey: '',
-        disableThinking: judge?.options?.enable_thinking === false,
+        // API responses are camelized by the api client (humps), so the
+        // provider option key arrives as enableThinking — read THAT, while
+        // the request payload keeps the provider's snake_case key.
+        disableThinking: judge?.options?.enableThinking === false,
       })
     }
   }, [open, judge, reset])

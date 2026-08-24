@@ -175,3 +175,33 @@ async def test_judge_options_snapshotted_into_scan(auth_client) -> None:
     await c.delete(f"/api/judges/{judge['id']}", headers=headers)
     detail = (await c.get(f"/api/scans/{scan['id']}", headers=headers)).json()
     assert detail["judge_options"] == {"enable_thinking": False}
+
+
+@pytest.mark.asyncio
+async def test_judge_options_persisted_on_update(auth_client) -> None:
+    """PATCH must persist options (regression: edit dialog checkbox state)."""
+    c, headers = auth_client
+
+    created = (await c.post("/api/judges", json=JUDGE_PAYLOAD, headers=headers)).json()
+    assert created["options"] == {}
+
+    updated = (
+        await c.patch(
+            f"/api/judges/{created['id']}",
+            json={"options": {"enable_thinking": False}},
+            headers=headers,
+        )
+    ).json()
+    assert updated["options"] == {"enable_thinking": False}
+
+    # survives re-fetch
+    listed = (await c.get("/api/judges", headers=headers)).json()
+    assert listed[0]["options"] == {"enable_thinking": False}
+
+    # clearing works too
+    cleared = (
+        await c.patch(
+            f"/api/judges/{created['id']}", json={"options": {}}, headers=headers
+        )
+    ).json()
+    assert cleared["options"] == {}
