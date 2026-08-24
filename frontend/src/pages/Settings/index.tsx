@@ -58,6 +58,7 @@ export function SettingsPage() {
           <input
             id="old"
             type="password"
+            autoComplete="current-password"
             required
             value={oldPassword}
             onChange={(e) => setOldPassword(e.target.value)}
@@ -71,6 +72,7 @@ export function SettingsPage() {
           <input
             id="new"
             type="password"
+            autoComplete="new-password"
             required
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}

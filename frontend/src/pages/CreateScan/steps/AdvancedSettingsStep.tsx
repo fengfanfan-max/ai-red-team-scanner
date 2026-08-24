@@ -123,12 +123,14 @@ export function AdvancedSettingsStep() {
 
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <input
+            autoComplete="off"
             placeholder="override base URL (optional)"
             value={state.judgeBaseUrl}
             onChange={(e) => setJudgeConfig({ judgeBaseUrl: e.target.value })}
             className={inputClass}
           />
           <input
+            autoComplete="off"
             placeholder="override model name (optional)"
             value={state.judgeModel}
             onChange={(e) => setJudgeConfig({ judgeModel: e.target.value })}
@@ -136,6 +138,7 @@ export function AdvancedSettingsStep() {
           />
           <input
             type="password"
+            autoComplete="new-password"
             placeholder="override api key (optional)"
             value={state.judgeApiKey}
             onChange={(e) => setJudgeConfig({ judgeApiKey: e.target.value })}

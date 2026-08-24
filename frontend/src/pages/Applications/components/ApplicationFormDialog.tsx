@@ -95,11 +95,12 @@ export function ApplicationFormDialog({ open, application, onClose, onSubmit }: 
           })}
         >
           <Field label="Name" htmlFor="name" error={errors.name?.message}>
-            <input id="name" {...register('name')} className={inputClass} placeholder="My GPT" />
+            <input id="name" autoComplete="off" {...register('name')} className={inputClass} placeholder="My GPT" />
           </Field>
           <Field label="Base URL" htmlFor="baseUrl" error={errors.baseUrl?.message}>
             <input
               id="baseUrl"
+              autoComplete="off"
               {...register('baseUrl')}
               className={inputClass}
               placeholder="https://api.openai.com/v1"
@@ -108,6 +109,7 @@ export function ApplicationFormDialog({ open, application, onClose, onSubmit }: 
           <Field label="Model name" htmlFor="modelName" error={errors.modelName?.message}>
             <input
               id="modelName"
+              autoComplete="off"
               {...register('modelName')}
               className={inputClass}
               placeholder="gpt-4o-mini"
@@ -121,6 +123,7 @@ export function ApplicationFormDialog({ open, application, onClose, onSubmit }: 
             <input
               id="apiKey"
               type="password"
+              autoComplete="new-password"
               {...register('apiKey')}
               className={inputClass}
               placeholder="sk-…"

@@ -77,7 +77,7 @@ export function JudgeFormDialog({ open, judge, onClose, onSubmit }: Props) {
             <label htmlFor="jname" className="mb-1 block text-sm text-muted-foreground">
               Name
             </label>
-            <input id="jname" {...register('name')} className={inputClass} placeholder="Local Qwen Judge" />
+            <input id="jname" autoComplete="off" {...register('name')} className={inputClass} placeholder="Local Qwen Judge" />
             {errors.name && <p className="mt-1 text-xs text-red-600">{errors.name.message}</p>}
           </div>
           <div>
@@ -86,6 +86,7 @@ export function JudgeFormDialog({ open, judge, onClose, onSubmit }: Props) {
             </label>
             <input
               id="jdesc"
+              autoComplete="off"
               {...register('description')}
               className={inputClass}
               placeholder="cheap local judge"
@@ -97,6 +98,7 @@ export function JudgeFormDialog({ open, judge, onClose, onSubmit }: Props) {
             </label>
             <input
               id="jbase"
+              autoComplete="off"
               {...register('baseUrl')}
               className={inputClass}
               placeholder="http://localhost:11434/v1"
@@ -109,6 +111,7 @@ export function JudgeFormDialog({ open, judge, onClose, onSubmit }: Props) {
             </label>
             <input
               id="jmodel"
+              autoComplete="off"
               {...register('modelName')}
               className={inputClass}
               placeholder="qwen2.5:7b"
@@ -124,6 +127,7 @@ export function JudgeFormDialog({ open, judge, onClose, onSubmit }: Props) {
             <input
               id="jkey"
               type="password"
+              autoComplete="new-password"
               {...register('apiKey')}
               className={inputClass}
               placeholder={judge ? judge.apiKeyMasked || '(none)' : 'optional — local endpoints need none'}
