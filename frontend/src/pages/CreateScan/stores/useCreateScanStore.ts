@@ -24,7 +24,9 @@ interface CreateScanActions {
   setAlgorithm: (algorithm: string) => void
   toggleDataset: (ref: DatasetRef) => void
   setAdvanced: (patch: Partial<Pick<CreateScanState, 'concurrency' | 'qpm' | 'failThreshold'>>) => void
-  setJudgeId: (id: number | null) => void
+  /** Select a preset judge; clears any inline override (mutually exclusive). */
+  selectJudge: (id: number | null) => void
+  /** Edit inline override; implicitly deselects the preset judge. */
   setJudgeConfig: (patch: Partial<Pick<CreateScanState, 'judgeBaseUrl' | 'judgeModel' | 'judgeApiKey'>>) => void
   reset: () => void
 }
@@ -63,7 +65,10 @@ export const useCreateScanStore = create<CreateScanState & CreateScanActions>((s
       }
     }),
   setAdvanced: (patch) => set(patch),
-  setJudgeId: (judgeId) => set({ judgeId }),
-  setJudgeConfig: (patch) => set(patch),
+  selectJudge: (judgeId) =>
+    set(judgeId === null
+      ? { judgeId: null }
+      : { judgeId, judgeBaseUrl: '', judgeModel: '', judgeApiKey: '' }),
+  setJudgeConfig: (patch) => set({ ...patch, judgeId: null }),
   reset: () => set(initialState),
 }))

@@ -64,4 +64,29 @@ describe('useCreateScanStore', () => {
     expect(state.qpm).toBe(60)
     expect(state.step).toBe(0)
   })
+
+  it('preset judge and inline override are mutually exclusive', () => {
+    const s = useCreateScanStore.getState()
+    // selecting a preset clears any inline override
+    s.setJudgeConfig({ judgeBaseUrl: 'https://api.openai.com/v1', judgeModel: 'gpt-4o' })
+    s.selectJudge(3)
+    let state = useCreateScanStore.getState()
+    expect(state.judgeId).toBe(3)
+    expect(state.judgeBaseUrl).toBe('')
+    expect(state.judgeModel).toBe('')
+
+    // editing an override deselects the preset
+    s.setJudgeConfig({ judgeModel: 'qwen2.5:7b' })
+    state = useCreateScanStore.getState()
+    expect(state.judgeId).toBeNull()
+    expect(state.judgeModel).toBe('qwen2.5:7b')
+
+    // deselecting keeps whatever overrides were set before selection? no —
+    // selection cleared them, so deselect leaves empty overrides
+    s.selectJudge(1)
+    s.selectJudge(null)
+    state = useCreateScanStore.getState()
+    expect(state.judgeId).toBeNull()
+    expect(state.judgeBaseUrl).toBe('')
+  })
 })

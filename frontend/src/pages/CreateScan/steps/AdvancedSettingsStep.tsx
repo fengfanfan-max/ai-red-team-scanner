@@ -12,7 +12,8 @@ import { useCreateScanStore } from '../stores/useCreateScanStore'
  */
 export function AdvancedSettingsStep() {
   const state = useCreateScanStore()
-  const { setAdvanced, setJudgeId, setJudgeConfig } = state
+  const { setAdvanced, selectJudge, setJudgeConfig } = state
+  const judgePresetSelected = state.judgeId !== null
 
   const { data: appsData } = useQuery({ queryKey: ['applications'], queryFn: listApplications })
   const { data: dsData } = useQuery({ queryKey: ['datasets'], queryFn: listDatasets })
@@ -95,7 +96,7 @@ export function AdvancedSettingsStep() {
         <div className="mt-3 flex flex-wrap gap-2">
           <button
             type="button"
-            onClick={() => setJudgeId(null)}
+            onClick={() => selectJudge(null)}
             className={`rounded-full border px-3 py-1 text-xs ${
               state.judgeId === null && !state.judgeModel
                 ? 'border-primary bg-primary/10 text-primary'
@@ -108,7 +109,7 @@ export function AdvancedSettingsStep() {
             <button
               key={judge.id}
               type="button"
-              onClick={() => setJudgeId(judge.id)}
+              onClick={() => selectJudge(judge.id)}
               className={`rounded-full border px-3 py-1 text-xs ${
                 state.judgeId === judge.id
                   ? 'border-primary bg-primary/10 text-primary'
@@ -124,27 +125,36 @@ export function AdvancedSettingsStep() {
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           <input
             autoComplete="off"
-            placeholder="override base URL (optional)"
+            disabled={judgePresetSelected}
+            placeholder={judgePresetSelected ? 'preset selected' : 'override base URL (optional)'}
             value={state.judgeBaseUrl}
             onChange={(e) => setJudgeConfig({ judgeBaseUrl: e.target.value })}
-            className={inputClass}
+            className={`${inputClass} disabled:opacity-50`}
           />
           <input
             autoComplete="off"
-            placeholder="override model name (optional)"
+            disabled={judgePresetSelected}
+            placeholder={judgePresetSelected ? 'preset selected' : 'override model name (optional)'}
             value={state.judgeModel}
             onChange={(e) => setJudgeConfig({ judgeModel: e.target.value })}
-            className={inputClass}
+            className={`${inputClass} disabled:opacity-50`}
           />
           <input
             type="password"
             autoComplete="new-password"
-            placeholder="override api key (optional)"
+            disabled={judgePresetSelected}
+            placeholder={judgePresetSelected ? 'preset selected' : 'override api key (optional)'}
             value={state.judgeApiKey}
             onChange={(e) => setJudgeConfig({ judgeApiKey: e.target.value })}
-            className={inputClass}
+            className={`${inputClass} disabled:opacity-50`}
           />
         </div>
+        {judgePresetSelected && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Preset selected — inline overrides are disabled. Edit any override field to switch to
+            custom.
+          </p>
+        )}
       </div>
 
       <div className="rounded-lg border border-border bg-surface p-4 text-sm">
