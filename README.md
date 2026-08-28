@@ -1,121 +1,129 @@
 # ai-red-team-scanner
 
-> 开源的 AI 红队安全扫描平台：对用户自有的 AI 模型执行多维度安全评测（内容安全、隐私、合规、幻觉等），产出安全评分、风险分布与失败用例。
+> Open-source AI red-team safety scanning platform — evaluate your own LLM endpoints across multiple risk dimensions (content safety, privacy, compliance, hallucination) and get a safety score, risk distribution, and failure cases.
 
 [![CI](https://github.com/fengfanfan-max/ai-red-team-scanner/actions/workflows/ci.yml/badge.svg)](https://github.com/fengfanfan-max/ai-red-team-scanner/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 功能（v1 已实现）
+[中文文档](README.zh-CN.md)
 
-- **AI 应用管理**：注册任意 OpenAI 兼容模型端点（OpenAI / Anthropic / Gemini / Ollama 本地模型……），密钥 Fernet 加密存储、响应仅返回掩码；创建后可测试对话
-- **安全扫描**：5 步创建向导（选应用/算法/数据集/试聊/高级设置），内置 5 类风险数据集（75 条提示词）+ 自定义 JSON 导入
-- **Judge 评测**：独立裁判模型对每条回答打分（0-10 + 理由，结构化输出），与目标模型解耦——可用便宜或本地模型控成本；启动前显示预计 LLM 调用量
-- **实时进度**：扫描列表 2s 轮询、百分比 + 剩余时间、断点续跑（重启恢复）
-- **结果洞察**：安全评分、按类别风险分布、失败用例表格 + 详情抽屉（prompt/answer/score/reason）
-- **Dashboard**：统计卡（扫描数/平均分/高风险数）、最近扫描、类别风险分布
-- **灵活部署**：本地零依赖起步（SQLite），生产可切 PostgreSQL；`AUTH_MODE=disabled` 免登录模式；`SIMULATE_SCAN=true` 模拟引擎（演示/测试免真实 key）
+## Features
 
-## 十分钟跑通全流程
+- **AI application management** — register any OpenAI-compatible endpoint (OpenAI / Anthropic / Gemini / local Ollama…). API keys are Fernet-encrypted at rest and only ever returned masked; test-chat validates the connection before scanning.
+- **Safety scanning** — 5-step wizard (application / algorithm / dataset / test-chat / advanced settings). Ships with 5 built-in risk datasets (75 prompts) + custom JSON import.
+- **Judge evaluation** — an independent judge model scores each response 0–10 with a structured reason, decoupled from the target (use a cheap or local model to control cost). Shows the expected LLM call count before you start.
+- **Reusable judge models** — manage judge presets (with encrypted keys) and pick one per scan; provider options like `enable_thinking: false` cut reasoning-model judge latency dramatically.
+- **Live progress** — 2s polling, percentage + estimated remaining time, and checkpoint resume (interrupted scans recover on restart).
+- **Result insight** — safety score, per-category risk bars, a filterable failure table with a detail drawer (prompt / answer / score / reason), plus per-call latency breakdown (target vs judge).
+- **Re-run scans** — replay the same configuration as a new, independent scan for reproducibility checks.
+- **Dashboard** — stat cards (scan count / avg score / high-risk), recent scans, risk-by-category distribution.
+- **Flexible deployment** — zero-dependency SQLite for local dev, PostgreSQL for production; `AUTH_MODE=disabled` no-login mode; `SIMULATE_SCAN=true` simulated engine for demo/tests without any API key.
+- **Operability** — request-logging middleware, configurable log level and rotating log file (`LOG_LEVEL` / `LOG_FILE`).
 
-**一键启动（推荐）**：
+## Quick start (10 minutes)
+
+**One command (recommended)**:
 
 ```bash
-./dev.sh        # demo 模式：模拟扫描引擎 + 免登录，零配置零 key
-./dev.sh real   # 完整模式：真实 LLM + 认证
+./dev.sh        # demo mode: simulated engine + no-login, zero config / zero key
+./dev.sh real   # full mode: real LLM + auth
 ```
 
-脚本自动装依赖、跑迁移、并行启动两端（后端 :8000 + 前端 :5173），Ctrl+C 全部停止。可覆盖 `BACKEND_PORT`/`FRONTEND_PORT`/`SIMULATE_SCAN`/`AUTH_MODE`。
+The script installs deps, applies migrations, and runs both servers (backend :8000, frontend :5173) in parallel; Ctrl+C stops everything. Override with `BACKEND_PORT` / `FRONTEND_PORT` / `SIMULATE_SCAN` / `AUTH_MODE`.
 
-手动分步启动（可选）：
+Manual step-by-step (optional):
 
 ```bash
-# 前置：Python ≥ 3.11（uv）、Node ≥ 22
+# Prereqs: Python ≥ 3.11 (uv), Node ≥ 22
 
-# 1. 后端（模拟引擎 + 免登录，无需任何 API key）
+# 1. Backend (simulated engine + no-login — no API key needed)
 cd backend
 uv sync
 uv run alembic upgrade head
 SIMULATE_SCAN=true AUTH_MODE=disabled uv run uvicorn app.main:app --reload
 
-# 2. 前端
+# 2. Frontend
 cd frontend
 npm install
 npm run dev
 ```
 
-打开 http://localhost:5173 → 新建一个 AI 应用（key 随便填，模拟模式不调用）→ Scans → New scan → 走完向导 → 列表看到进度到 100% → 点进结果页看评分与失败用例。
+Open http://localhost:5173 → create an AI application (any key — simulated mode makes no calls) → Scans → New scan → walk through the wizard → watch progress hit 100% → open the result page for the score and failure cases.
 
-> 真实扫描：去掉 `SIMULATE_SCAN=true`，在应用里填真实 OpenAI 兼容端点与 key；也可在向导第 5 步配置便宜的 judge 模型（如 Ollama 本地模型）。
+> Real scans: drop `SIMULATE_SCAN=true`, enter a real OpenAI-compatible endpoint and key in the application; set a cheap judge (e.g. a local Ollama model) in step 5 of the wizard.
 
-### Docker Compose（生产形态）
+### Docker Compose (production)
 
 ```bash
-docker compose up --build          # SQLite 模式（单服务）
-docker compose --profile postgres up --build   # PostgreSQL 模式
+docker compose up --build                                   # SQLite (single service)
+docker compose --profile postgres up --build               # PostgreSQL
 ```
 
-> 生产必须设置 `JWT_SECRET`（≥32 字节）与 `ENCRYPTION_KEY`（Fernet key）。
+> Production must set `JWT_SECRET` (≥32 bytes) and `ENCRYPTION_KEY` (Fernet key).
 
-### 环境变量
+### Environment variables
 
-| 变量 | 默认 | 说明 |
+| Variable | Default | Description |
 |---|---|---|
-| `DATABASE_URL` | `sqlite+aiosqlite:///./data.db` | SQLAlchemy 连接串（Postgres 见 ADR-0002） |
-| `AUTH_MODE` | `enabled` | `disabled` = 免登录模式（本地/演示） |
-| `JWT_SECRET` | （必填，生产） | 签名密钥 |
-| `ENCRYPTION_KEY` | （必填，生产） | 应用 API key 加密密钥（Fernet） |
-| `SIMULATE_SCAN` | `false` | `true` = 模拟扫描引擎（演示/测试，不调 LLM） |
+| `DATABASE_URL` | `sqlite+aiosqlite:///./data.db` | SQLAlchemy connection string (Postgres: see ADR-0002) |
+| `AUTH_MODE` | `enabled` | `disabled` = no-login mode (local/demo) |
+| `JWT_SECRET` | (required in prod) | Signing secret |
+| `ENCRYPTION_KEY` | (required in prod) | Fernet key for API-key encryption |
+| `SIMULATE_SCAN` | `false` | `true` = simulated engine (demo/test, no LLM calls) |
+| `LOG_LEVEL` | `INFO` | Backend log level (`DEBUG` for deep debugging) |
+| `LOG_FILE` | *(empty)* | Optional rotating log file (5 MB × 3) |
 
-## 测试
+## Testing
 
 ```bash
-# 后端（39 个用例）：lint + 单测 + 迁移
+# Backend (62 tests): lint + unit + migrations
 cd backend && uv run ruff check . && uv run pytest -q
 
-# 前端（23 个用例）：类型 + lint + 单测 + 构建
+# Frontend (24 tests): type-check + lint + unit + build
 cd frontend && npm run type-check && npm run lint && npm test && npm run build
 
-# E2E（需先启动两端服务器，见"十分钟跑通"；本地用系统 Chrome）
+# E2E (start both servers first; use system Chrome locally)
 cd frontend && PLAYWRIGHT_SYSTEM_CHROME=1 npx playwright test
 ```
 
-CI（GitHub Actions）覆盖：后端 lint/单测、Postgres 方言测试、前端检查、E2E（下载 Chromium）。
+CI (GitHub Actions) runs: backend lint/unit, Postgres-dialect tests, frontend checks, and E2E (downloads Chromium).
 
-## 项目结构
+## Project structure
 
 ```
-├── backend/          # FastAPI 应用（REST API + 扫描引擎 + 静态托管前端）
+├── backend/          # FastAPI app (REST API + scanning engine + static frontend)
 │   ├── app/
-│   │   ├── api/      # 路由（auth/applications/datasets/scans/dashboard）
-│   │   ├── core/     # 配置、DB、加密、安全
-│   │   ├── data/     # 内置数据集加载器
-│   │   └── engine/   # 扫描引擎（限速/judge/双实现/任务管理）
-│   ├── alembic/      # 数据库迁移
+│   │   ├── api/      # routes (auth/applications/datasets/judges/scans/dashboard)
+│   │   ├── core/     # config, DB, crypto, security, logging, middleware
+│   │   ├── data/     # built-in dataset loader
+│   │   └── engine/   # scanning engine (rate limit/judge/dual impl/task mgmt)
+│   ├── alembic/      # database migrations
 │   └── tests/
-├── frontend/         # React 19 + Vite 7 SPA（Tailwind 4 + shadcn/ui/Radix，见 ADR-0005）
+├── frontend/         # React 19 + Vite 7 SPA (Tailwind 4 + shadcn/ui/Radix, see ADR-0005)
 │   ├── src/
-│   └── e2e/          # Playwright 场景
+│   └── e2e/          # Playwright scenarios
 ├── docs/
-│   ├── CONTEXT.md    # 领域词汇表
-│   ├── PLAN.md       # 开发计划与里程碑
-│   ├── DATASETS.md   # 数据集格式与贡献指南
-│   └── adr/          # 架构决策记录
+│   ├── CONTEXT.md    # domain glossary
+│   ├── PLAN.md       # development plan & milestones
+│   ├── DATASETS.md   # dataset format & contribution guide
+│   └── adr/          # architecture decision records
 └── .github/workflows # CI + Release
 ```
 
-## 文档
+## Documentation
 
-- [开发计划与里程碑](docs/PLAN.md)
-- [架构决策记录（ADR）](docs/adr/)
-- [领域词汇表](docs/CONTEXT.md)
-- [数据集贡献指南](docs/DATASETS.md)
-- [贡献指南](CONTRIBUTING.md)
+- [Development plan & milestones](docs/PLAN.md)
+- [Architecture decision records (ADR)](docs/adr/)
+- [Domain glossary](docs/CONTEXT.md)
+- [Dataset contribution guide](docs/DATASETS.md)
+- [Contributing](CONTRIBUTING.md)
+- [中文文档](README.zh-CN.md)
 
-## 路线图
+## Roadmap
 
-- **v1（已完成）**：认证 → AI 应用 → 扫描向导 → 扫描结果 → Dashboard（MVP 核心闭环）+ 自定义数据集 + 模拟/真实双引擎
-- **v2 候选**：多租户 + RBAC、多模态媒体评测、PDF/CSV/ZIP 报告、WebSocket 实时进度、算法插件化
+- **v1 (done)** — auth → AI applications → scan wizard → results → dashboard (MVP core loop) + custom datasets + simulated/real dual engine
+- **v2 candidates** — multi-tenancy + RBAC, multimodal media evaluation, PDF/CSV/ZIP reports, WebSocket live progress, plugin algorithms
 
-## 许可
+## License
 
-[MIT](LICENSE)。内置数据集内容同样以 MIT 许可随仓库分发（见 [docs/DATASETS.md](docs/DATASETS.md)）。
+[MIT](LICENSE). Built-in dataset content is also distributed under MIT (see [docs/DATASETS.md](docs/DATASETS.md)).
