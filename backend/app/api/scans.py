@@ -31,24 +31,26 @@ def _progress_pct(scan: Scan) -> float:
     return round(scan.completed_cases / scan.total_cases * 100, 1)
 
 
-# Matches a single already-existing rerun suffix: " (rerun)" or " (rerun @ HH:MM:SS)".
-_RERUN_SUFFIX_RE = re.compile(r"\s*\(rerun(?: @ [^)]*)?\)$")
+# Matches a single already-appended rerun suffix of any historical form:
+# " (rerun)", " (rerun @ HH:MM:SS)", " (rerun #N)".
+_RERUN_SUFFIX_RE = re.compile(r"\s*\(rerun(?:[^)]*)?\)$")
 
 
-def _rerun_name(base: str) -> str:
-    """Build a rerun name anchored to the ORIGINAL name + the rerun's start time.
-
-    Strips any already-appended rerun suffixes first, so repeated reruns never
-    stack ("x (rerun) (rerun)" instead of "x (rerun @ 12:00:00)").
-    """
-    stripped = base
+def _base_scan_name(name: str) -> str:
+    """Strip any stacked rerun suffixes to recover the original scan name."""
+    stripped = name
     while True:
         next_stripped = _RERUN_SUFFIX_RE.sub("", stripped)
         if next_stripped == stripped:
             break
         stripped = next_stripped
-    now = datetime.now().strftime("%H:%M:%S")
-    return f"{stripped} (rerun @ {now})"
+    return stripped
+
+
+def _rerun_name(base: str, run_number: int) -> str:
+    """Build a rerun name as 'base (rerun #N)' where N is the run's position
+    in the family (root = original, first rerun = #2, …). Never stacks."""
+    return f"{_base_scan_name(base)} (rerun #{run_number})"
 
 
 def _to_out(scan: Scan) -> ScanOut:
@@ -180,10 +182,21 @@ async def rerun_scan(
     if original is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scan not found")
 
+    # Run number within the family: existing runs count + 1 (root = original,
+    # first rerun = #2, …). Deleted runs would shift numbering, but scans are
+    # never deleted, so this stays stable.
+    family = original.family_id or original.id
+    existing = await db.scalar(
+        select(func.count())
+        .select_from(Scan)
+        .where((Scan.id == family) | (Scan.family_id == family))
+    )
+    run_number = int(existing or 0) + 1
+
     # Configuration snapshot; counters/status/results intentionally NOT copied.
     scan = Scan(
-        name=_rerun_name(original.name),
-        family_id=original.family_id or original.id,
+        name=_rerun_name(original.name, run_number),
+        family_id=family,
         application_id=original.application_id,
         algorithm=original.algorithm,
         dataset_refs=original.dataset_refs,

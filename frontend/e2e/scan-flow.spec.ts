@@ -30,7 +30,7 @@ test('full scan flow: register → app → scan → completed', async ({ page })
   await page.fill('#modelName', 'gpt-4o-mini')
   await page.fill('#apiKey', 'sk-e2e-1234567890')
   await page.getByRole('button', { name: 'Create' }).click()
-  await expect(page.getByText('E2E Target')).toBeVisible()
+  await expect(page.getByText('E2E Target').first()).toBeVisible()
 
   // --- create a scan via the wizard ---
   await page.goto('/scans/new')
@@ -78,14 +78,14 @@ test('full scan flow: register → app → scan → completed', async ({ page })
   // --- rerun: same config as a new scan, navigates to the new one ---
   await page.getByRole('button', { name: 'Rerun' }).click()
   await expect(page).toHaveURL(/\/scans\/\d+$/)
-  await expect(page.getByText(/rerun @ /).first()).toBeVisible()
+  await expect(page.getByText(/rerun #/).first()).toBeVisible()
 
   // --- family grouping: back on the list, the root + rerun must be ONE card
   // showing 2 runs, with an expandable history ---
   await page.goto('/scans')
   await expect(page.getByText(/2 runs/).first()).toBeVisible()
   await page.getByRole('button', { name: /Show history \(2 runs\)/ }).click()
-  await expect(page.getByText(/rerun @ /).first()).toBeVisible()
+  await expect(page.getByText(/rerun #/).first()).toBeVisible()
 
   // --- dashboard ---
   await page.goto('/home')
