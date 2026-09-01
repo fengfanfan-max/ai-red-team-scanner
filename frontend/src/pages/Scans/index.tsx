@@ -28,8 +28,9 @@ function RunRow({ scan }: { scan: Scan }) {
 }
 
 function FamilyCard({ scans, onRerun }: { scans: Scan[]; onRerun: (id: number) => void }) {
-  const newest = scans[scans.length - 1]
-  const history = [...scans].reverse()
+  // scans is newest-first; the family card represents the latest run.
+  const newest = scans[0]
+  const history = [...scans]
   const [expanded, setExpanded] = useState(false)
   const active = newest.status === 'pending' || newest.status === 'running'
 
@@ -116,19 +117,20 @@ export function ScansPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['scans'] }),
   })
 
-  // family grouping: familyId is the root scan id; NULL means the scan is its
-  // own root (single run)
+  // family grouping: familyId is the root scan id; a fresh scan's familyId is
+  // null, so its family key is its OWN id. Reruns carry the root's id, so the
+  // root and its reruns all land in the same bucket and merge into one card.
   const groups = new Map<number, Scan[]>()
-  const singles: Scan[] = []
   for (const scan of data?.items ?? []) {
     const family = scan.familyId ?? scan.id
-    if (scan.familyId === null) singles.push(scan)
-    else {
-      const bucket = groups.get(family) ?? []
-      bucket.push(scan)
-      groups.set(family, bucket)
-    }
+    const bucket = groups.get(family) ?? []
+    bucket.push(scan)
+    groups.set(family, bucket)
   }
+  // newest run first within each family, and families ordered by their newest run
+  const families = [...groups.values()]
+  for (const bucket of families) bucket.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+  families.sort((a, b) => +new Date(b[0].createdAt) - +new Date(a[0].createdAt))
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -163,10 +165,7 @@ export function ScansPage() {
       )}
 
       <div className="mt-6 space-y-3">
-        {singles.map((scan) => (
-          <FamilyCard key={scan.id} scans={[scan]} onRerun={(id) => rerunMutation.mutate(id)} />
-        ))}
-        {[...groups.values()].map((bucket) => (
+        {families.map((bucket) => (
           <FamilyCard key={bucket[0].id} scans={bucket} onRerun={(id) => rerunMutation.mutate(id)} />
         ))}
       </div>

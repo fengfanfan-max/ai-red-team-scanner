@@ -80,6 +80,13 @@ test('full scan flow: register → app → scan → completed', async ({ page })
   await expect(page).toHaveURL(/\/scans\/\d+$/)
   await expect(page.getByText(/\(rerun\)/).first()).toBeVisible()
 
+  // --- family grouping: back on the list, the root + rerun must be ONE card
+  // showing 2 runs, with an expandable history ---
+  await page.goto('/scans')
+  await expect(page.getByText(/2 runs/).first()).toBeVisible()
+  await page.getByRole('button', { name: /Show history \(2 runs\)/ }).click()
+  await expect(page.getByText(/\(rerun\)/).first()).toBeVisible()
+
   // --- dashboard ---
   await page.goto('/home')
   await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
