@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 
-import { getScan, rerunScan } from '@/api/scans'
+import { getScan, listScanRuns, rerunScan } from '@/api/scans'
 import { getScanResults, listScanCases } from '@/api/results'
 import { CaseStatusBadge, ScanStatusBadge, ToneProgress } from '@/components/ScanStatusBadge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -53,6 +53,12 @@ export function ScanResultPage() {
     },
   })
 
+  const { data: runs = [] } = useQuery({
+    queryKey: ['scan-runs', id],
+    queryFn: () => listScanRuns(id),
+    enabled: Number.isFinite(id),
+  })
+
   const active = scan?.status === 'pending' || scan?.status === 'running'
   const { data: results, isLoading: resultsLoading } = useQuery({
     queryKey: ['scan-results', id],
@@ -84,6 +90,32 @@ export function ScanResultPage() {
           <ScanStatusBadge status={scan.status} />
         </div>
       </div>
+
+      {runs.length > 1 && (
+        <div className="rounded-lg border border-border bg-card p-4">
+          <h3 className="text-sm font-medium">Run history ({runs.length})</h3>
+          <div className="mt-2 space-y-1">
+            {runs.map((run) => (
+              <Link
+                key={run.id}
+                to={`/scans/${run.id}`}
+                className={`flex items-center justify-between rounded-md px-3 py-1.5 text-sm hover:bg-muted ${
+                  run.id === id ? 'bg-muted' : ''
+                }`}
+              >
+                <span className="truncate">{run.name}</span>
+                <span className="flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+                  {run.status === 'completed' && run.safetyScore !== null ? (
+                    <span className="font-medium">{run.safetyScore}</span>
+                  ) : (
+                    <ScanStatusBadge status={run.status} />
+                  )}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {scan.status === 'failed' && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">

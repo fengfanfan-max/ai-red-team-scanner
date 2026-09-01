@@ -1,75 +1,101 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { listScans, rerunScan } from '@/api/scans'
 import { ScanStatusBadge, ToneProgress } from '@/components/ScanStatusBadge'
 import type { Scan } from '@/types/scans'
 
-function ScanCard({ scan, onRerun }: { scan: Scan; onRerun: (id: number) => void }) {
+function RunRow({ scan }: { scan: Scan }) {
   const active = scan.status === 'pending' || scan.status === 'running'
+  return (
+    <Link
+      to={`/scans/${scan.id}`}
+      className="flex items-center justify-between rounded-md px-3 py-2 text-sm hover:bg-muted"
+    >
+      <span className="truncate font-medium">{scan.name}</span>
+      <span className="ml-3 flex shrink-0 items-center gap-2 text-xs text-muted-foreground">
+        <ToneProgress value={scan.progressPct} tone={active ? 'active' : scan.status === 'failed' ? 'bad' : 'good'} />
+        <span className="w-24">{scan.progressPct}%</span>
+        {scan.status === 'completed' && scan.safetyScore !== null ? (
+          <span className="font-medium">{scan.safetyScore}</span>
+        ) : (
+          <ScanStatusBadge status={scan.status} />
+        )}
+      </span>
+    </Link>
+  )
+}
+
+function FamilyCard({ scans, onRerun }: { scans: Scan[]; onRerun: (id: number) => void }) {
+  const newest = scans[scans.length - 1]
+  const history = [...scans].reverse()
+  const [expanded, setExpanded] = useState(false)
+  const active = newest.status === 'pending' || newest.status === 'running'
+
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center justify-between">
         <Link
-          to={`/scans/${scan.id}`}
+          to={`/scans/${newest.id}`}
           className="text-sm font-medium hover:text-primary"
-          title="Scan detail"
+          title="Newest run in this scan family"
         >
-          {scan.name}
+          {newest.name}
         </Link>
         <div className="flex items-center gap-2">
+          {scans.length > 1 && (
+            <button
+              onClick={() => setExpanded((e) => !e)}
+              className="rounded border border-border px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted"
+            >
+              {expanded ? 'Hide' : 'Show'} history ({scans.length} runs)
+            </button>
+          )}
           <button
-            onClick={() => onRerun(scan.id)}
+            onClick={() => onRerun(newest.id)}
             disabled={active}
             className="rounded border border-border px-2 py-0.5 text-xs text-muted-foreground hover:bg-muted disabled:opacity-40"
             title="Run the same configuration again"
           >
             Rerun
           </button>
-          <ScanStatusBadge status={scan.status} />
+          <ScanStatusBadge status={newest.status} />
         </div>
       </div>
+
       <p className="mt-1 text-xs text-muted-foreground">
-        {scan.completedCases}/{scan.totalCases} cases · {scan.algorithm} · app #{scan.applicationId}
+        {newest.completedCases}/{newest.totalCases} cases · {newest.algorithm} ·{' '}
+        {scans.length} run{scans.length > 1 ? 's' : ''}
       </p>
 
       <div className="mt-3">
-        <ToneProgress
-          value={scan.progressPct}
-          tone={
-            active ? 'active' : scan.status === 'failed' ? 'bad' : 'good'
-          }
-        />
+        <ToneProgress value={newest.progressPct} tone={active ? 'active' : newest.status === 'failed' ? 'bad' : 'good'} />
       </div>
 
       <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
         <span>
           {active
-            ? `${scan.progressPct}% — ${scan.completedCases} done`
-            : `${scan.progressPct}%`}
+            ? `${newest.progressPct}% — ${newest.completedCases} done`
+            : `${newest.progressPct}%`}
         </span>
-        {scan.status === 'completed' && scan.safetyScore !== null && (
-          <span className="font-medium">
-            Safety score:{' '}
-            <span
-              className={
-                scan.safetyScore >= 70
-                  ? 'text-green-600 dark:text-green-400'
-                  : scan.safetyScore >= 40
-                    ? 'text-amber-600 dark:text-amber-400'
-                    : 'text-red-600 dark:text-red-400'
-              }
-            >
-              {scan.safetyScore}
-            </span>
-          </span>
+        {newest.status === 'completed' && newest.safetyScore !== null && (
+          <span className="font-medium">Safety score: {newest.safetyScore}</span>
         )}
-        {scan.status === 'failed' && (
-          <span className="max-w-[50%] truncate text-red-600" title={scan.errorMessage ?? ''}>
-            {scan.errorMessage ?? 'Scan failed'}
+        {newest.status === 'failed' && (
+          <span className="max-w-[50%] truncate text-red-600" title={newest.errorMessage ?? ''}>
+            {newest.errorMessage ?? 'Scan failed'}
           </span>
         )}
       </div>
+
+      {expanded && scans.length > 1 && (
+        <div className="mt-3 border-t border-border pt-2">
+          {history.map((run) => (
+            <RunRow key={run.id} scan={run} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -77,8 +103,7 @@ function ScanCard({ scan, onRerun }: { scan: Scan; onRerun: (id: number) => void
 export function ScansPage() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['scans'],
-    queryFn: () => listScans({ pageSize: 50 }),
-    // Poll only while any scan is still active (2s cadence).
+    queryFn: () => listScans({ pageSize: 100 }),
     refetchInterval: (query) => {
       const items = query.state.data?.items ?? []
       return items.some((s) => s.status === 'pending' || s.status === 'running') ? 2000 : false
@@ -91,13 +116,27 @@ export function ScansPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['scans'] }),
   })
 
+  // family grouping: familyId is the root scan id; NULL means the scan is its
+  // own root (single run)
+  const groups = new Map<number, Scan[]>()
+  const singles: Scan[] = []
+  for (const scan of data?.items ?? []) {
+    const family = scan.familyId ?? scan.id
+    if (scan.familyId === null) singles.push(scan)
+    else {
+      const bucket = groups.get(family) ?? []
+      bucket.push(scan)
+      groups.set(family, bucket)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-4xl">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Scans</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Safety evaluation runs against your models.
+            Safety evaluation runs. Re-runs of a scan are grouped as its history.
           </p>
         </div>
         <Link
@@ -124,8 +163,11 @@ export function ScansPage() {
       )}
 
       <div className="mt-6 space-y-3">
-        {data?.items.map((scan) => (
-          <ScanCard key={scan.id} scan={scan} onRerun={(id) => rerunMutation.mutate(id)} />
+        {singles.map((scan) => (
+          <FamilyCard key={scan.id} scans={[scan]} onRerun={(id) => rerunMutation.mutate(id)} />
+        ))}
+        {[...groups.values()].map((bucket) => (
+          <FamilyCard key={bucket[0].id} scans={bucket} onRerun={(id) => rerunMutation.mutate(id)} />
         ))}
       </div>
     </div>

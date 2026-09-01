@@ -221,6 +221,7 @@ class ScanCreate(BaseModel):
 class ScanOut(BaseModel):
     id: int
     name: str
+    family_id: int | None
     status: str
     application_id: int
     algorithm: str

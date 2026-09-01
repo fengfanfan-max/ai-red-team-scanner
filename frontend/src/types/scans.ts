@@ -8,6 +8,7 @@ export interface DatasetRef {
 export interface Scan {
   id: number
   name: string
+  familyId: number | null
   status: ScanStatus
   applicationId: number
   algorithm: string

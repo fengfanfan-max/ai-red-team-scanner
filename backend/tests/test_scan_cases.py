@@ -175,6 +175,38 @@ async def test_rerun_creates_independent_copy(sim_client) -> None:
 
 
 @pytest.mark.asyncio
+async def test_rerun_groups_into_scan_family(sim_client) -> None:
+    """A scan and its reruns share a family_id; /runs lists the whole history."""
+    c, headers = sim_client
+    completed = await _completed_scan(c, headers)
+
+    root = (await c.get(f"/api/scans/{completed['id']}", headers=headers)).json()
+    assert root["family_id"] is None  # root of its own family
+
+    rerun1 = (await c.post(f"/api/scans/{completed['id']}/rerun", headers=headers)).json()
+    rerun2 = (await c.post(f"/api/scans/{rerun1['id']}/rerun", headers=headers)).json()
+
+    # reruns inherit the family root id
+    family = root["id"]
+    assert rerun1["family_id"] == family
+    assert rerun2["family_id"] == family
+
+    # /runs returns the whole chain, oldest first
+    runs = (await c.get(f"/api/scans/{rerun2['id']}/runs", headers=headers)).json()
+    assert [r["id"] for r in runs] == [root["id"], rerun1["id"], rerun2["id"]]
+    assert all(r["family_id"] == family for r in runs[1:])
+
+    # a separate fresh scan is its own family (not grouped with this one)
+    fresh = await _completed_scan(c, headers)
+    fresh_detail = (await c.get(f"/api/scans/{fresh['id']}", headers=headers)).json()
+    fresh_runs = (await c.get(f"/api/scans/{fresh['id']}/runs", headers=headers)).json()
+    assert fresh_detail["family_id"] is None
+    assert len(fresh_runs) == 1
+
+    assert (await c.get("/api/scans/99999/runs", headers=headers)).status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_scan_detail_exposes_judge_config(sim_client) -> None:
     c, headers = sim_client
     scan = await _completed_scan(c, headers)

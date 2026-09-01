@@ -24,3 +24,7 @@ export function createScan(payload: ScanCreatePayload): Promise<Scan> {
 export function rerunScan(id: number): Promise<Scan> {
   return api<Scan>(`/scans/${id}/rerun`, { method: 'POST' })
 }
+
+export function listScanRuns(id: number): Promise<Scan[]> {
+  return api<Scan[]>(`/scans/${id}/runs`)
+}

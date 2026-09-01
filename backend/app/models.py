@@ -98,6 +98,9 @@ class Scan(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(200))
+    # Scan family: NULL = the family root (its own id identifies the family);
+    # reruns inherit the root's id so a scan and its re-runs group together.
+    family_id: Mapped[int | None] = mapped_column(Integer, nullable=True, index=True)
     # pending | running | failed | completed
     status: Mapped[str] = mapped_column(String(20), default="pending")
     application_id: Mapped[int] = mapped_column(

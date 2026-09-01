@@ -34,6 +34,7 @@ def _to_out(scan: Scan) -> ScanOut:
     return ScanOut(
         id=scan.id,
         name=scan.name,
+        family_id=scan.family_id,
         status=scan.status,
         application_id=scan.application_id,
         algorithm=scan.algorithm,
@@ -123,6 +124,7 @@ async def create_scan(
 
     scan = Scan(
         name=payload.name,
+        family_id=None,  # a fresh scan is the root of its own family
         application_id=payload.application_id,
         algorithm=payload.algorithm,
         dataset_refs=[ref.model_dump() for ref in payload.datasets],
@@ -160,6 +162,7 @@ async def rerun_scan(
     # Configuration snapshot; counters/status/results intentionally NOT copied.
     scan = Scan(
         name=f"{original.name} (rerun)",
+        family_id=original.family_id or original.id,
         application_id=original.application_id,
         algorithm=original.algorithm,
         dataset_refs=original.dataset_refs,
@@ -256,6 +259,23 @@ async def get_scan_progress(scan_id: int, db: DbDep) -> ScanProgress:
         safety_score=scan.safety_score,
         error_message=scan.error_message,
     )
+
+
+@router.get("/{scan_id}/runs", response_model=list[ScanOut])
+async def list_scan_runs(scan_id: int, db: DbDep) -> list[ScanOut]:
+    """All scans in the same family (the scan's history), oldest first."""
+    scan = await db.get(Scan, scan_id)
+    if scan is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Scan not found")
+    family = scan.family_id or scan.id
+    rows = (
+        await db.scalars(
+            select(Scan)
+            .where((Scan.id == family) | (Scan.family_id == family))
+            .order_by(Scan.created_at.asc())
+        )
+    ).all()
+    return [_to_out(s) for s in rows]
 
 
 @router.get("/{scan_id}/cases", response_model=PaginatedList[ScanCaseOut])
