@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime
 
 from fastapi import APIRouter, HTTPException, Query, status
@@ -28,6 +29,26 @@ def _progress_pct(scan: Scan) -> float:
     if scan.total_cases == 0:
         return 0.0
     return round(scan.completed_cases / scan.total_cases * 100, 1)
+
+
+# Matches a single already-existing rerun suffix: " (rerun)" or " (rerun @ HH:MM:SS)".
+_RERUN_SUFFIX_RE = re.compile(r"\s*\(rerun(?: @ [^)]*)?\)$")
+
+
+def _rerun_name(base: str) -> str:
+    """Build a rerun name anchored to the ORIGINAL name + the rerun's start time.
+
+    Strips any already-appended rerun suffixes first, so repeated reruns never
+    stack ("x (rerun) (rerun)" instead of "x (rerun @ 12:00:00)").
+    """
+    stripped = base
+    while True:
+        next_stripped = _RERUN_SUFFIX_RE.sub("", stripped)
+        if next_stripped == stripped:
+            break
+        stripped = next_stripped
+    now = datetime.now().strftime("%H:%M:%S")
+    return f"{stripped} (rerun @ {now})"
 
 
 def _to_out(scan: Scan) -> ScanOut:
@@ -161,7 +182,7 @@ async def rerun_scan(
 
     # Configuration snapshot; counters/status/results intentionally NOT copied.
     scan = Scan(
-        name=f"{original.name} (rerun)",
+        name=_rerun_name(original.name),
         family_id=original.family_id or original.id,
         application_id=original.application_id,
         algorithm=original.algorithm,

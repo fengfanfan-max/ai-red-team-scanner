@@ -132,7 +132,8 @@ async def test_rerun_creates_independent_copy(sim_client) -> None:
     # new, independent scan with copied configuration
     orig = (await c.get(f"/api/scans/{completed['id']}", headers=headers)).json()
     assert body["id"] != orig["id"]
-    assert body["name"] == f"{orig['name']} (rerun)"
+    import re as _re
+    assert _re.fullmatch(r"^[^()]+ \(rerun @ \d{2}:\d{2}:\d{2}\)$", body["name"]), body["name"]
     assert body["application_id"] == orig["application_id"]
     assert body["datasets"] == orig["datasets"]
     assert body["concurrency"] == orig["concurrency"]
