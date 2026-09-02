@@ -12,6 +12,7 @@ export interface Scan {
   status: ScanStatus
   applicationId: number
   algorithm: string
+  attacks: string[]
   datasets: DatasetRef[]
   concurrency: number
   qpm: number
@@ -63,6 +64,7 @@ export interface ScanCreatePayload {
   name: string
   application_id: number
   algorithm: string
+  attacks?: string[]
   datasets: DatasetRef[]
   concurrency: number
   qpm: number

@@ -37,7 +37,9 @@ test('full scan flow: register → app → scan → completed', async ({ page })
   // step 1: pick the application
   await page.getByRole('button', { name: /E2E Target/ }).click()
   await page.getByRole('button', { name: 'Next' }).click()
-  // step 2: keep default algorithm
+  // step 2: select an attack technique (multi-select)
+  await page.getByRole('button', { name: /Jailbreak/ }).click()
+  await expect(page.getByText(/· selected/).first()).toBeVisible()
   await page.getByRole('button', { name: 'Next' }).click()
   // step 3: pick a dataset
   await page.getByRole('button', { name: /Content Safety/ }).click()

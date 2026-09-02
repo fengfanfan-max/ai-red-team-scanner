@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.applications import router as applications_router
+from app.api.attacks import router as attacks_router
 from app.api.auth import router as auth_router
 from app.api.dashboard import router as dashboard_router
 from app.api.datasets import router as datasets_router
@@ -39,6 +40,7 @@ def create_app() -> FastAPI:
 
     app.include_router(auth_router)
     app.include_router(applications_router)
+    app.include_router(attacks_router)
     app.include_router(datasets_router)
     app.include_router(judges_router)
     app.include_router(scans_router)

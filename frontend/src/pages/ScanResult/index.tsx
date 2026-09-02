@@ -27,6 +27,7 @@ interface CaseDetail {
   judgeScore: number | null
   judgeReason: string | null
   judgeStatus: string
+  attackKey?: string
   latencyMs?: number
   targetLatencyMs?: number | null
   judgeLatencyMs?: number | null
@@ -315,6 +316,7 @@ function CasesTable({
                 <TableHead>Prompt</TableHead>
                 <TableHead>Score</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Attack</TableHead>
                 <TableHead className="text-right">Latency</TableHead>
               </TableRow>
             </TableHeader>
@@ -341,6 +343,9 @@ function CasesTable({
                   </TableCell>
                   <TableCell>
                     <CaseStatusBadge status={caseRow.judgeStatus} />
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {caseRow.attackKey !== 'default' ? caseRow.attackKey : '—'}
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
                     {caseRow.latencyMs}ms
@@ -404,6 +409,7 @@ function FailuresTable({
               <TableHead>Prompt</TableHead>
               <TableHead>Score</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Attack</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -429,6 +435,9 @@ function FailuresTable({
                 </TableCell>
                 <TableCell>
                   <CaseStatusBadge status={f.judgeStatus} />
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {f.attackKey && f.attackKey !== 'default' ? f.attackKey : '—'}
                 </TableCell>
               </TableRow>
             ))}

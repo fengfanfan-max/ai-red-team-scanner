@@ -6,6 +6,7 @@ export interface CreateScanState {
   step: number
   applicationId: number | null
   algorithm: string
+  attackKeys: string[]
   datasetRefs: DatasetRef[]
   concurrency: number
   qpm: number
@@ -22,6 +23,7 @@ interface CreateScanActions {
   prev: () => void
   setApplication: (id: number | null) => void
   setAlgorithm: (algorithm: string) => void
+  toggleAttack: (key: string) => void
   toggleDataset: (ref: DatasetRef) => void
   setAdvanced: (patch: Partial<Pick<CreateScanState, 'concurrency' | 'qpm' | 'failThreshold'>>) => void
   /** Select a preset judge; clears any inline override (mutually exclusive). */
@@ -37,6 +39,7 @@ const initialState: CreateScanState = {
   step: 0,
   applicationId: null,
   algorithm: 'Default Tests',
+  attackKeys: [],
   datasetRefs: [],
   concurrency: 4,
   qpm: 60,
@@ -54,6 +57,12 @@ export const useCreateScanStore = create<CreateScanState & CreateScanActions>((s
   prev: () => set((s) => ({ step: Math.max(s.step - 1, 0) })),
   setApplication: (applicationId) => set({ applicationId }),
   setAlgorithm: (algorithm) => set({ algorithm }),
+  toggleAttack: (key) =>
+    set((s) => ({
+      attackKeys: s.attackKeys.includes(key)
+        ? s.attackKeys.filter((k) => k !== key)
+        : [...s.attackKeys, key],
+    })),
   toggleDataset: (ref) =>
     set((s) => {
       const key = (r: DatasetRef) => `${r.source}:${r.ref}`

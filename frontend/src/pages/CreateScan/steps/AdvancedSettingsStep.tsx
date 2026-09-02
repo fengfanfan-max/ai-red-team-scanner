@@ -29,7 +29,9 @@ export function AdvancedSettingsStep() {
       return sum + (d ? d.promptCount : 0)
     }, 0) ?? 0
 
-  const llmCalls = totalCases * 2
+  const attackCount = Math.max(state.attackKeys.length, 1)
+  const effTotalCases = totalCases * attackCount
+  const llmCalls = effTotalCases * 2
   const selectedApp = appsData?.find((a) => a.id === state.applicationId)
 
   const inputClass =
@@ -155,7 +157,10 @@ export function AdvancedSettingsStep() {
         <dl className="mt-2 space-y-1 text-xs text-neutral-600 dark:text-neutral-300">
           <div className="flex justify-between">
             <dt>Cases</dt>
-            <dd>{totalCases}</dd>
+            <dd>
+              {totalCases}
+              {attackCount > 1 && <span className="text-muted-foreground"> × {attackCount} attacks</span>}
+            </dd>
           </div>
           <div className="flex justify-between">
             <dt>Target model</dt>

@@ -188,6 +188,16 @@ class JudgeModelOut(BaseModel):
 
 
 # ============================================
+# Attacks
+# ============================================
+
+class AttackOut(BaseModel):
+    key: str
+    name: str
+    description: str
+
+
+# ============================================
 # Scans
 # ============================================
 
@@ -211,6 +221,7 @@ class ScanCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     application_id: int
     algorithm: str = Field(default="Default Tests", max_length=100)
+    attacks: list[str] = Field(default_factory=list, max_length=20)
     datasets: list[DatasetRef] = Field(min_length=1, max_length=20)
     concurrency: int = Field(default=4, ge=1, le=32)
     qpm: int = Field(default=60, ge=1, le=10000)
@@ -225,6 +236,7 @@ class ScanOut(BaseModel):
     status: str
     application_id: int
     algorithm: str
+    attacks: list[str]
     datasets: list[DatasetRef]
     concurrency: int
     qpm: int
@@ -292,6 +304,7 @@ class ScanCaseOut(BaseModel):
     judge_score: float | None
     judge_reason: str | None
     judge_status: str
+    attack_key: str
     latency_ms: int
     target_latency_ms: int | None
     judge_latency_ms: int | None

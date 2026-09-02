@@ -61,6 +61,7 @@ def _to_out(scan: Scan) -> ScanOut:
         status=scan.status,
         application_id=scan.application_id,
         algorithm=scan.algorithm,
+        attacks=scan.attack_keys,
         datasets=[DatasetRef.model_validate(ref) for ref in scan.dataset_refs],
         concurrency=scan.concurrency,
         qpm=scan.qpm,
@@ -114,11 +115,22 @@ async def create_scan(
     if app is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Application not found")
 
-    _, total = await _expand_refs(db, payload.datasets)
-    if total == 0:
+    _, base_total = await _expand_refs(db, payload.datasets)
+    if base_total == 0:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="No cases to scan"
         )
+    from app.engine.attacks import get_attack
+
+    attacks = payload.attacks or []
+    for key in attacks:
+        if get_attack(key) is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=f"Unknown attack module: {key}",
+            )
+    # total cases = dataset cases × number of selected attacks (baseline = 1).
+    total = base_total * (len(attacks) if attacks else 1)
 
     judge_base_url: str | None = None
     judge_model: str | None = None
@@ -150,6 +162,7 @@ async def create_scan(
         family_id=None,  # a fresh scan is the root of its own family
         application_id=payload.application_id,
         algorithm=payload.algorithm,
+        attack_keys=payload.attacks,
         dataset_refs=[ref.model_dump() for ref in payload.datasets],
         concurrency=payload.concurrency,
         qpm=payload.qpm,
@@ -199,6 +212,7 @@ async def rerun_scan(
         family_id=family,
         application_id=original.application_id,
         algorithm=original.algorithm,
+        attack_keys=original.attack_keys,
         dataset_refs=original.dataset_refs,
         concurrency=original.concurrency,
         qpm=original.qpm,

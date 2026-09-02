@@ -21,6 +21,7 @@ export interface FailureCase {
   judgeScore: number | null
   judgeReason: string | null
   judgeStatus: string
+  attackKey?: string
 }
 
 /** Full per-case row (passed, failed or errored). */
@@ -33,6 +34,7 @@ export interface ScanCase {
   judgeScore: number | null
   judgeReason: string | null
   judgeStatus: string
+  attackKey: string
   latencyMs: number
   targetLatencyMs: number | null
   judgeLatencyMs: number | null

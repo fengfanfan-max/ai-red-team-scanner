@@ -21,6 +21,16 @@ export function createScan(payload: ScanCreatePayload): Promise<Scan> {
   return api<Scan>('/scans', { method: 'POST', body: payload })
 }
 
+export interface Attack {
+  key: string
+  name: string
+  description: string
+}
+
+export function listAttacks(): Promise<Attack[]> {
+  return api<Attack[]>('/attacks')
+}
+
 export function rerunScan(id: number): Promise<Scan> {
   return api<Scan>(`/scans/${id}/rerun`, { method: 'POST' })
 }

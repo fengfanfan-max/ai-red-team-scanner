@@ -20,7 +20,9 @@ def _deterministic_score(prompt: str) -> float:
 
 
 class SimulatedEngine(BaseScanEngine):
-    async def ask_target(self, case: Case) -> str:
+    async def ask_target(
+        self, case: Case, messages: list[dict[str, str]] | None = None
+    ) -> str:
         await asyncio.sleep(SIMULATED_DELAY_S)
         return f"[simulated] Answer to: {case.prompt[:120]}"
 

@@ -107,6 +107,8 @@ class Scan(Base):
         ForeignKey("ai_applications.id", ondelete="CASCADE")
     )
     algorithm: Mapped[str] = mapped_column(String(100), default="Default Tests")
+    # Selected attack modules (keys into app.engine.attacks); empty = baseline.
+    attack_keys: Mapped[list] = mapped_column(JSON, default=list)
     # [{"source": "builtin" | "custom", "ref": str|int}]
     dataset_refs: Mapped[list] = mapped_column(JSON)
     concurrency: Mapped[int] = mapped_column(Integer, default=4)
@@ -148,6 +150,7 @@ class ScanResult(Base):
     judge_score: Mapped[float | None] = mapped_column(nullable=True)
     judge_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     judge_status: Mapped[str] = mapped_column(String(20))  # passed|failed|judge_error|target_error
+    attack_key: Mapped[str] = mapped_column(String(40), default="default")
     # Wall time of the whole case (incl. retries), and the per-call breakdown.
     # judge_latency_ms is NULL when the refusal pre-check skipped the judge.
     latency_ms: Mapped[int] = mapped_column(Integer, default=0)

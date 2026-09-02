@@ -48,10 +48,15 @@ class Case:
     dataset_name: str
     subcategory: str
     prompt: str
+    attack_key: str = "default"
+    # Attacked conversation to send (None -> single user message with prompt).
+    target_messages: list[dict[str, str]] | None = None
 
     @property
     def prompt_hash(self) -> str:
-        raw = f"{self.dataset_name}|{self.subcategory}|{self.prompt}"
+        # Distinct per attack so the same probe under different attacks is
+        # treated as a separate case (and matched at resume time).
+        raw = f"{self.dataset_name}|{self.subcategory}|{self.attack_key}|{self.prompt}"
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
@@ -73,7 +78,9 @@ class BaseScanEngine:
         # 1 target call + 1 judge call per case (judge may follow target).
         return total_cases * 2
 
-    async def ask_target(self, case: Case) -> str:  # pragma: no cover - abstract
+    async def ask_target(
+        self, case: Case, messages: list[dict[str, str]] | None = None
+    ) -> str:  # pragma: no cover - abstract
         raise NotImplementedError
 
     async def ask_judge(self, case: Case, answer: str) -> JudgeVerdict:  # pragma: no cover
@@ -86,27 +93,52 @@ class BaseScanEngine:
 
     @staticmethod
     async def _load_cases(db, scan: Scan) -> list[Case]:
-        """Expand dataset refs into a flat list of cases."""
+        """Expand dataset refs × selected attacks into a flat list of cases.
+
+        Each (dataset prompt, attack) pair becomes one case, with the attack
+        producing the `target_messages` actually sent to the model.
+        """
+        from app.engine.attacks import get_attack
+
+        # Selected attack keys; empty means baseline ("default").
+        attacks = scan.attack_keys or []
+        if not attacks:
+            attacks = ["default"]
+
         cases: list[Case] = []
         for ref in scan.dataset_refs:
+            dataset_cases: list[tuple[str, str, str]] = []
             if ref["source"] == "builtin":
                 dataset = load_builtin_dataset(ref["ref"])
                 if dataset is None:
                     raise ValueError(f"Unknown builtin dataset: {ref['ref']}")
                 for sub in dataset.subcategories:
-                    cases.extend(
-                        Case(dataset.name, sub.name, prompt) for prompt in sub.prompts
-                    )
+                    dataset_cases.extend((dataset.name, sub.name, prompt) for prompt in sub.prompts)
             elif ref["source"] == "custom":
                 custom = await db.get(CustomDataset, int(ref["ref"]))
                 if custom is None:
                     raise ValueError(f"Unknown custom dataset: {ref['ref']}")
                 for sub in custom.cases:
-                    cases.extend(
-                        Case(custom.name, sub["name"], prompt) for prompt in sub["prompts"]
+                    dataset_cases.extend(
+                        (custom.name, sub["name"], prompt) for prompt in sub["prompts"]
                     )
             else:
                 raise ValueError(f"Unknown dataset source: {ref['source']}")
+
+            for ds_name, sub_name, prompt in dataset_cases:
+                for key in attacks:
+                    attack = get_attack(key)
+                    if attack is None:
+                        raise ValueError(f"Unknown attack module: {key}")
+                    cases.append(
+                        Case(
+                            dataset_name=ds_name,
+                            subcategory=sub_name,
+                            prompt=prompt,
+                            attack_key=key,
+                            target_messages=attack.build_messages(prompt),
+                        )
+                    )
         return cases
 
     async def run(self, scan_id: int) -> None:
@@ -155,7 +187,7 @@ class BaseScanEngine:
                 judge_ms: int | None = None
                 try:
                     t0 = time.monotonic()
-                    answer = await self.ask_target(case)
+                    answer = await self.ask_target(case, case.target_messages)
                     target_ms = int((time.monotonic() - t0) * 1000)
                 except Exception as exc:  # noqa: BLE001 - one bad case must not kill the scan
                     status = RESULT_TARGET_ERROR
@@ -201,6 +233,7 @@ class BaseScanEngine:
                             judge_score=score,
                             judge_reason=reason,
                             judge_status=status,
+                            attack_key=case.attack_key,
                             latency_ms=latency,
                             target_latency_ms=target_ms,
                             judge_latency_ms=judge_ms,
