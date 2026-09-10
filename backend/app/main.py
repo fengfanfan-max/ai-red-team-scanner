@@ -50,6 +50,17 @@ def create_app() -> FastAPI:
     async def health() -> dict:
         return {"status": "ok", "app": settings.app_name, "version": settings.version}
 
+    @app.get(f"{settings.api_prefix}/meta")
+    async def meta() -> dict:
+        """Runtime mode flags so the UI can show what kind of instance this is
+        (e.g. a demo instance with the simulated engine)."""
+        return {
+            "app": settings.app_name,
+            "version": settings.version,
+            "simulate_scan": settings.simulate_scan,
+            "auth_mode": settings.auth_mode,
+        }
+
     return app
 
 
